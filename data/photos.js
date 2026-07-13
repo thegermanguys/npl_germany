@@ -20,8 +20,8 @@
 window.NPL_PHOTOS = [
   { src: "images/photos/photo-placeholder-1.jpg", title: "Photo coming soon", subtitle: "Frankfurt Gorkhas · Season One" },
   { src: "images/photos/photo-placeholder-2.jpg", title: "Photo coming soon", subtitle: "Munich Yetis · Season One" },
-  { src: "images/photos/photo-placeholder-3.jpg", title: "Photo coming soon", subtitle: "Berlin Garudas · Season One" },
+  { src: "images/photos/photo-placeholder-3.jpg", title: "Photo coming soon", subtitle: "Berlin Rhinos · Season One" },
   { src: "images/photos/photo-placeholder-4.jpg", title: "Photo coming soon", subtitle: "Hamburg Sherpas · Season One" },
   { src: "images/photos/photo-placeholder-5.jpg", title: "Photo coming soon", subtitle: "Cologne Khukuris · Season One" },
-  { src: "images/photos/photo-placeholder-6.jpg", title: "Photo coming soon", subtitle: "Stuttgart Rhinos · Season One" }
+  { src: "images/photos/photo-placeholder-6.jpg", title: "Photo coming soon", subtitle: "Stuttgart Garudas · Season One" }
 ];

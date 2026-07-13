@@ -10,10 +10,10 @@
   const FRANCHISE_COLOR = {
     'Frankfurt Gorkhas': 'var(--frankfurt)',
     'Munich Yetis': 'var(--munich)',
-    'Berlin Garudas': 'var(--berlin)',
+    'Berlin Rhinos': 'var(--berlin)',
     'Hamburg Sherpas': 'var(--hamburg)',
     'Cologne Khukuris': 'var(--cologne)',
-    'Stuttgart Rhinos': 'var(--stuttgart)'
+    'Stuttgart Garudas': 'var(--stuttgart)'
   };
 
   const players = window.NPL_PLAYERS || [];
