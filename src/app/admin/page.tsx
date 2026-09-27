@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { uploadLeagueLogo } from "@/app/actions/media";
 import { Nav } from "@/components/Nav";
-import { ballLabel, isDatabaseConfigured } from "@/lib/db";
+import { PhotoCircle } from "@/components/PhotoCircle";
+import { PhotoUpload } from "@/components/PhotoUpload";
+import { PlayerStatsStrip } from "@/components/PlayerStats";
 import { EligibilityBadge } from "@/components/EligibilityBadge";
 import { EligibilityReview } from "@/components/EligibilityReview";
-import { PlayerStatsStrip } from "@/components/PlayerStats";
+import { LEAGUE_ADMIN_EMAIL } from "@/lib/admin-account";
+import { leagueLogoUrl } from "@/lib/branding";
+import { ballLabel, isDatabaseConfigured } from "@/lib/db";
+import { mediaPath } from "@/lib/media";
 import { countPendingEligibility, countUsersByRole, getCurrentSeason, listPlayers } from "@/lib/queries";
 import { getSession, isAdmin } from "@/lib/session";
 
@@ -14,7 +20,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const user = await getSession();
-  if (!isAdmin(user)) redirect("/login");
+  if (!user || !isAdmin(user)) redirect("/login");
 
   if (!isDatabaseConfigured()) {
     return (
@@ -29,10 +35,11 @@ export default async function AdminPage() {
     );
   }
 
-  const [season, counts, pending] = await Promise.all([
+  const [season, counts, pending, logoUrl] = await Promise.all([
     getCurrentSeason(),
     countUsersByRole(),
     countPendingEligibility(),
+    leagueLogoUrl(),
   ]);
   const players = season ? await listPlayers(season.id) : [];
 
@@ -40,13 +47,25 @@ export default async function AdminPage() {
     <>
       <Nav user={user} active="admin" />
       <section className="page-hero">
-        <div className="wrap">
-          <div className="eyebrow">LEAGUE ADMIN</div>
-          <h1>Season 1</h1>
+        <div className="wrap profile-hero">
+          <PhotoCircle src={logoUrl} name="NPL Germany" size="lg" />
+          <div>
+            <div className="eyebrow">LEAGUE ADMIN</div>
+            <h1>Season 1</h1>
+            <p className="lede">{user.email}</p>
+          </div>
         </div>
       </section>
       <section className="players-section">
         <div className="wrap">
+          <div className="form-card league-logo-card">
+            <h3>NPL Germany logo</h3>
+            <div className="photo-block">
+              <PhotoCircle src={logoUrl} name="NPL Germany" size="md" />
+              <PhotoUpload action={uploadLeagueLogo} name="logo" label="Logo" />
+            </div>
+            <p className="muted">{LEAGUE_ADMIN_EMAIL}</p>
+          </div>
           <div className="admin-nav">
             <Link href="/admin/users">Users</Link>
             <Link href="/admin/franchises">Franchises</Link>
@@ -85,7 +104,16 @@ export default async function AdminPage() {
               <tbody>
                 {players.map((player) => (
                   <tr key={player.id}>
-                    <td>{player.full_name}</td>
+                    <td>
+                      <div className="name-with-photo">
+                        <PhotoCircle
+                          src={player.photo_id ? mediaPath(player.photo_id) : null}
+                          name={player.full_name}
+                          size="sm"
+                        />
+                        <span>{player.full_name}</span>
+                      </div>
+                    </td>
                     <td>{player.city}</td>
                     <td>
                       <PlayerStatsStrip player={player} />

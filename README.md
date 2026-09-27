@@ -17,7 +17,10 @@ Season 1 is **deuce ball** only.
 1. Copy `.env.example` to `.env.local`.
 2. Put your Neon connection string in `DATABASE_URL`. Do not commit it.
 3. Set `AUTH_SECRET` to a long random string.
-4. Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` for the first admin account.
+4. Optional: set `ADMIN_PASSWORD` so setup can hash the league admin password.
+   The admin email is always `nplgermany.admin@thegermanguy.org`. If you skip
+   this, insert a bcrypt hash on `users.password_hash` in Neon. Do not commit
+   a password.
 5. Install and apply the schema:
 
 ```bash
@@ -51,7 +54,7 @@ framework). In the Vercel project **npl-germany**:
 | --- | --- | --- |
 | Player | Self-register on `/register` or the home form | Own profile, CricHeroes, stats |
 | Franchise owner | Admin creates the account | Eligible (buyable) player list, profiles, stats |
-| Admin | `npm run db:setup` using `ADMIN_*` | Users, eligibility, franchises, season, player records |
+| Admin | Seeded as `nplgermany.admin@thegermanguy.org` | Users, eligibility, franchises, season, logos, player records |
 
 Season 1 eligibility is Nepali + legal status living in Germany. Admin confirms or rejects.
 Only confirmed eligible players are buyable in the auction list.
@@ -78,3 +81,8 @@ The existing look (colors, franchises, gallery, player cards) is reused. The
 old mailto form, founder-dashboard passcode, and leftover helper copy are gone.
 Sample roster rows from `data/players.js` are no longer the source of truth —
 registered players live in Neon.
+
+Player photos, franchise logos, and the NPL Germany logo are stored as
+`bytea` rows in Neon `media_assets` and served from `/api/media/[id]`.
+Cricketing profile photos are circular. The league logo is also the admin
+profile photo.

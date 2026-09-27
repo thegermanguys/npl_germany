@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
+import postgres from "postgres";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -40,7 +41,23 @@ if (!setupSource) {
 
 const kind = urlKind(setupSource.value);
 console.log(`applying schema via ${setupSource.name} (${kind})`);
-const sql = neon(setupSource.value);
+const setupHost = (() => {
+  try {
+    return new URL(setupSource.value).hostname.toLowerCase();
+  } catch {
+    return "";
+  }
+})();
+const localPostgres = setupHost === "127.0.0.1" || setupHost === "localhost";
+const sql = localPostgres
+  ? postgres(setupSource.value, { max: 1, onnotice() {} })
+  : neon(setupSource.value);
+
+async function runStatement(statement) {
+  const text = statement.replace(/;\s*$/, "");
+  if (localPostgres) return sql.unsafe(text);
+  return sql.query(text);
+}
 
 function redact(message) {
   return String(message).replace(/[a-z][a-z0-9+.-]*:\/\/\S+/gi, "[redacted-url]");
@@ -129,7 +146,7 @@ const statements = splitSql(schema);
 for (const statement of statements) {
   const preview = statement.replace(/\s+/g, " ").slice(0, 72);
   try {
-    await sql.query(statement.replace(/;\s*$/, ""));
+    await runStatement(statement);
     console.log(`applied: ${preview}`);
   } catch (error) {
     const message = redact(error instanceof Error ? error.message : error);
@@ -172,18 +189,46 @@ await sql`
 `;
 console.log("ensured Season 1 (deuce ball)");
 
-const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+const LEAGUE_ADMIN_EMAIL = "nplgermany.admin@thegermanguy.org";
+const UNSET_PASSWORD_HASH = "unset";
 const adminPassword = process.env.ADMIN_PASSWORD;
-if (adminEmail && adminPassword) {
-  const hash = bcrypt.hashSync(adminPassword, 10);
+
+const existingAdmin = await sql`
+  SELECT id, password_hash FROM users WHERE email = ${LEAGUE_ADMIN_EMAIL} LIMIT 1
+`;
+const adminRow = existingAdmin[0];
+const hashLooksSet = Boolean(adminRow?.password_hash && String(adminRow.password_hash).startsWith("$2"));
+
+if (!adminRow) {
+  const hash = adminPassword ? bcrypt.hashSync(adminPassword, 10) : UNSET_PASSWORD_HASH;
   await sql`
     INSERT INTO users (email, password_hash, role, display_name)
-    VALUES (${adminEmail}, ${hash}, 'admin', 'League admin')
-    ON CONFLICT (email) DO NOTHING
+    VALUES (${LEAGUE_ADMIN_EMAIL}, ${hash}, 'admin', 'NPL Germany')
   `;
-  console.log(`admin account ready for ${adminEmail}`);
+  console.log(
+    adminPassword
+      ? `admin row created for ${LEAGUE_ADMIN_EMAIL} from ADMIN_PASSWORD`
+      : `admin row created for ${LEAGUE_ADMIN_EMAIL}; set password with ADMIN_PASSWORD or update users.password_hash in Neon`,
+  );
 } else {
-  console.log("skipped admin seed (set ADMIN_EMAIL and ADMIN_PASSWORD to create one)");
+  await sql`
+    UPDATE users SET role = 'admin', display_name = 'NPL Germany'
+    WHERE email = ${LEAGUE_ADMIN_EMAIL}
+  `;
+  if (adminPassword && !hashLooksSet) {
+    const hash = bcrypt.hashSync(adminPassword, 10);
+    await sql`
+      UPDATE users SET password_hash = ${hash} WHERE email = ${LEAGUE_ADMIN_EMAIL}
+    `;
+    console.log(`admin password set from ADMIN_PASSWORD for ${LEAGUE_ADMIN_EMAIL}`);
+  } else if (hashLooksSet) {
+    console.log(`admin row exists for ${LEAGUE_ADMIN_EMAIL}; left password_hash unchanged`);
+  } else {
+    console.log(
+      `admin row exists for ${LEAGUE_ADMIN_EMAIL}; password still unset — set ADMIN_PASSWORD or update users.password_hash in Neon`,
+    );
+  }
 }
 
 console.log("setup complete");
+if (localPostgres) await sql.end({ timeout: 2 });

@@ -1,5 +1,6 @@
 import type { PlayerStats } from "./cricheroes";
 import { getSql } from "./db";
+import { asMediaBuffer, type MediaKind } from "./media";
 import type {
   EligibilityStatus,
   FranchiseRow,
@@ -50,6 +51,7 @@ function mapPlayer(row: Record<string, unknown>): PlayerListItem {
     stats_high_score: asNumber(row.stats_high_score),
     stats_best_bowling: (row.stats_best_bowling as string | null) ?? null,
     stats_fetched_at: (row.stats_fetched_at as string | null) ?? null,
+    photo_id: (row.photo_id as string | null) ?? null,
     created_at: String(row.created_at ?? ""),
     updated_at: String(row.updated_at ?? ""),
     email: String(row.email ?? ""),
@@ -147,7 +149,7 @@ export async function listUsers(): Promise<Array<UserRow & { franchise_name: str
 export async function listFranchises(): Promise<FranchiseRow[]> {
   const sql = getSql();
   const rows = await sql`
-    SELECT id, slug, city, name, full_name, tagline, description, color_key, sort_order
+    SELECT id, slug, city, name, full_name, tagline, description, color_key, sort_order, logo_id
     FROM franchises
     ORDER BY sort_order, city
   `;
@@ -157,7 +159,7 @@ export async function listFranchises(): Promise<FranchiseRow[]> {
 export async function getFranchise(id: string): Promise<FranchiseRow | null> {
   const sql = getSql();
   const rows = await sql`
-    SELECT id, slug, city, name, full_name, tagline, description, color_key, sort_order
+    SELECT id, slug, city, name, full_name, tagline, description, color_key, sort_order, logo_id
     FROM franchises
     WHERE id = ${id}
     LIMIT 1
@@ -242,7 +244,7 @@ export async function getProfileByUserId(userId: string): Promise<PlayerListItem
            p.eligibility_reviewed_at::text, p.cricheroes_url, p.stats_source,
            p.stats_matches, p.stats_runs, p.stats_wickets, p.stats_batting_avg,
            p.stats_strike_rate, p.stats_economy, p.stats_high_score, p.stats_best_bowling,
-           p.stats_fetched_at::text, p.created_at::text, p.updated_at::text,
+           p.stats_fetched_at::text, p.photo_id, p.created_at::text, p.updated_at::text,
            u.email, f.full_name AS franchise_name, f.color_key AS franchise_color
     FROM player_profiles p
     JOIN users u ON u.id = p.user_id
@@ -262,7 +264,7 @@ export async function getProfileById(id: string): Promise<PlayerListItem | null>
            p.eligibility_reviewed_at::text, p.cricheroes_url, p.stats_source,
            p.stats_matches, p.stats_runs, p.stats_wickets, p.stats_batting_avg,
            p.stats_strike_rate, p.stats_economy, p.stats_high_score, p.stats_best_bowling,
-           p.stats_fetched_at::text, p.created_at::text, p.updated_at::text,
+           p.stats_fetched_at::text, p.photo_id, p.created_at::text, p.updated_at::text,
            u.email, f.full_name AS franchise_name, f.color_key AS franchise_color
     FROM player_profiles p
     JOIN users u ON u.id = p.user_id
@@ -282,7 +284,7 @@ export async function listPlayers(seasonId: string): Promise<PlayerListItem[]> {
            p.eligibility_reviewed_at::text, p.cricheroes_url, p.stats_source,
            p.stats_matches, p.stats_runs, p.stats_wickets, p.stats_batting_avg,
            p.stats_strike_rate, p.stats_economy, p.stats_high_score, p.stats_best_bowling,
-           p.stats_fetched_at::text, p.created_at::text, p.updated_at::text,
+           p.stats_fetched_at::text, p.photo_id, p.created_at::text, p.updated_at::text,
            u.email, f.full_name AS franchise_name, f.color_key AS franchise_color
     FROM player_profiles p
     JOIN users u ON u.id = p.user_id
@@ -371,4 +373,74 @@ export async function countUsersByRole(): Promise<Record<Role, number>> {
     counts[row.role] = row.n;
   }
   return counts;
+}
+
+export async function insertMediaAsset(input: {
+  kind: MediaKind;
+  mimeType: string;
+  bytes: Buffer;
+}): Promise<string> {
+  const sql = getSql();
+  const rows = await sql`
+    INSERT INTO media_assets (kind, mime_type, bytes)
+    VALUES (${input.kind}, ${input.mimeType}, ${input.bytes})
+    RETURNING id
+  `;
+  return String((rows[0] as { id: string }).id);
+}
+
+export async function getMediaAsset(
+  id: string,
+): Promise<{ mime_type: string; bytes: Buffer } | null> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT mime_type, bytes FROM media_assets WHERE id = ${id} LIMIT 1
+  `;
+  const row = rows[0] as { mime_type: string; bytes: unknown } | undefined;
+  if (!row) return null;
+  return { mime_type: String(row.mime_type), bytes: asMediaBuffer(row.bytes) };
+}
+
+async function deleteMedia(id: string | null): Promise<void> {
+  if (!id) return;
+  const sql = getSql();
+  await sql`DELETE FROM media_assets WHERE id = ${id}`;
+}
+
+export async function setPlayerPhoto(profileId: string, mediaId: string): Promise<void> {
+  const sql = getSql();
+  const rows = await sql`SELECT photo_id FROM player_profiles WHERE id = ${profileId} LIMIT 1`;
+  const previous = (rows[0] as { photo_id: string | null } | undefined)?.photo_id ?? null;
+  await sql`
+    UPDATE player_profiles SET photo_id = ${mediaId}, updated_at = now() WHERE id = ${profileId}
+  `;
+  if (previous && previous !== mediaId) await deleteMedia(previous);
+}
+
+export async function setFranchiseLogo(franchiseId: string, mediaId: string): Promise<void> {
+  const sql = getSql();
+  const rows = await sql`SELECT logo_id FROM franchises WHERE id = ${franchiseId} LIMIT 1`;
+  const previous = (rows[0] as { logo_id: string | null } | undefined)?.logo_id ?? null;
+  await sql`UPDATE franchises SET logo_id = ${mediaId} WHERE id = ${franchiseId}`;
+  if (previous && previous !== mediaId) await deleteMedia(previous);
+}
+
+export async function getLeagueLogoId(): Promise<string | null> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT logo_id FROM league_settings WHERE id = 'npl_germany' LIMIT 1
+  `;
+  const id = (rows[0] as { logo_id: string | null } | undefined)?.logo_id;
+  return id ? String(id) : null;
+}
+
+export async function setLeagueLogo(mediaId: string): Promise<void> {
+  const sql = getSql();
+  const previous = await getLeagueLogoId();
+  await sql`
+    INSERT INTO league_settings (id, logo_id)
+    VALUES ('npl_germany', ${mediaId})
+    ON CONFLICT (id) DO UPDATE SET logo_id = EXCLUDED.logo_id
+  `;
+  if (previous && previous !== mediaId) await deleteMedia(previous);
 }

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { CricketMarks } from "@/components/CricketIcon";
+import { CricketPitch } from "@/components/CricketPitch";
 import { Nav } from "@/components/Nav";
 import { PlayersDirectory } from "@/components/PlayersDirectory";
 import { ballLabel } from "@/lib/db";
@@ -18,16 +20,20 @@ export default async function PlayersPage() {
     <>
       <Nav user={user} active="players" />
       <section className="page-hero">
-        <div className="wrap">
-          <div className="eyebrow">
-            {season?.name ?? "SEASON 1"} · {season ? ballLabel(season.ball_type).toUpperCase() : "DEUCE BALL"}
+        <div className="wrap page-hero-row">
+          <div>
+            <div className="eyebrow">
+              {season?.name ?? "SEASON 1"} · {season ? ballLabel(season.ball_type).toUpperCase() : "DEUCE BALL"}
+            </div>
+            <h1>Players</h1>
+            <p className="lede">
+              {inspect
+                ? "Eligible players for auction. Stats and CricHeroes sit on each row."
+                : "Eligible players for Season 1."}
+            </p>
+            <CricketMarks />
           </div>
-          <h1>Players</h1>
-          <p className="lede">
-            {inspect
-              ? "Eligible players for auction. Stats and CricHeroes sit on each row."
-              : "Eligible players for Season 1."}
-          </p>
+          <CricketPitch compact />
         </div>
       </section>
       <section className="players-section">
