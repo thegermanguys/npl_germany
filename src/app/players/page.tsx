@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Nav } from "@/components/Nav";
 import { PlayersDirectory } from "@/components/PlayersDirectory";
 import { ballLabel } from "@/lib/db";
+import { playersForViewer } from "@/lib/eligibility";
 import { loadPortal } from "@/lib/portal";
 import { canInspectPlayers } from "@/lib/session";
 
@@ -11,6 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function PlayersPage() {
   const { user, configured, season, players } = await loadPortal();
   const inspect = canInspectPlayers(user);
+  const visible = playersForViewer(players, user);
 
   return (
     <>
@@ -23,8 +25,8 @@ export default async function PlayersPage() {
           <h1>Players</h1>
           <p className="lede">
             {inspect
-              ? "Every registered player. Open a profile before you bid."
-              : "Registered players for Season 1."}
+              ? "Eligible players for auction. Stats and CricHeroes sit on each row."
+              : "Eligible players for Season 1."}
           </p>
         </div>
       </section>
@@ -33,7 +35,11 @@ export default async function PlayersPage() {
           {!configured ? (
             <div className="empty-note">The player list is not connected yet.</div>
           ) : (
-            <PlayersDirectory players={players} inspect={inspect} />
+            <PlayersDirectory
+              players={visible}
+              inspect={inspect}
+              showEligibility={user?.role === "admin"}
+            />
           )}
         </div>
       </section>

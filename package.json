@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/lib/validate.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/*.test.ts",
     "db:setup": "node --env-file=.env.local scripts/setup.mjs"
   },
   "dependencies": {

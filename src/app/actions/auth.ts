@@ -2,10 +2,11 @@
 
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
+import { emptyStats, resolvePlayerStats } from "@/lib/cricheroes";
 import { DbNotConfiguredError } from "@/lib/db";
 import { createPlayerProfile, createUser, getCurrentSeason, getUserByEmail } from "@/lib/queries";
 import { clearSession, setSession } from "@/lib/session";
-import { validateLogin, validateRegistration } from "@/lib/validate";
+import { checkboxOn, validateLogin, validateRegistration } from "@/lib/validate";
 
 export type ActionState = {
   error?: string;
@@ -24,6 +25,9 @@ export async function registerPlayer(
     city: String(formData.get("city") ?? ""),
     playingRole: String(formData.get("playingRole") ?? ""),
     experience: String(formData.get("experience") ?? ""),
+    nepaliCitizen: checkboxOn(formData.get("nepaliCitizen")),
+    germanyLegalResident: checkboxOn(formData.get("germanyLegalResident")),
+    cricheroesUrl: String(formData.get("cricheroesUrl") ?? ""),
   });
   if (!parsed.ok) return { fieldErrors: parsed.errors };
 
@@ -34,6 +38,7 @@ export async function registerPlayer(
     const season = await getCurrentSeason();
     if (!season) return { error: "Season 1 is not set up yet." };
 
+    const resolved = await resolvePlayerStats(parsed.value.cricheroesUrl, emptyStats());
     const user = await createUser({
       email: parsed.value.email,
       passwordHash: bcrypt.hashSync(parsed.value.password, 10),
@@ -48,6 +53,11 @@ export async function registerPlayer(
       city: parsed.value.city,
       playingRole: parsed.value.playingRole,
       experience: parsed.value.experience,
+      nepaliCitizen: true,
+      germanyLegalResident: true,
+      cricheroesUrl: resolved.url,
+      stats: resolved.stats,
+      statsSource: resolved.source,
     });
     await setSession({
       userId: user.id,

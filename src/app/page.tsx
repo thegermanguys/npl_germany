@@ -187,7 +187,7 @@ export default async function HomePage() {
           <div className="sec-head">
             <div className="sec-eyebrow">PLAYER REGISTRATION</div>
             <h2>Put your name in the auction list</h2>
-            <p>Name, contact, and the basics franchise owners need. Nothing extra.</p>
+            <p>Name, contact, eligibility, and your CricHeroes profile. Nothing extra.</p>
           </div>
           <div className="join-grid">
             <div>
@@ -206,7 +206,7 @@ export default async function HomePage() {
                       <path d="M4 12l5 5L20 6" />
                     </svg>
                   </span>
-                  Currently reside in Germany
+                  Legal status living in Germany
                 </li>
                 <li>
                   <span className="tick">

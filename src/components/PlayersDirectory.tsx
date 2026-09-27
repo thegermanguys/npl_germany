@@ -2,7 +2,10 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { isBuyable } from "@/lib/eligibility";
 import type { PlayerListItem } from "@/lib/types";
+import { EligibilityBadge } from "./EligibilityBadge";
+import { PlayerStatsStrip } from "./PlayerStats";
 
 const FRANCHISE_COLORS: Record<string, string> = {
   frankfurt: "var(--frankfurt)",
@@ -16,9 +19,11 @@ const FRANCHISE_COLORS: Record<string, string> = {
 export function PlayersDirectory({
   players,
   inspect,
+  showEligibility = false,
 }: {
   players: PlayerListItem[];
   inspect: boolean;
+  showEligibility?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("All");
@@ -42,7 +47,7 @@ export function PlayersDirectory({
   });
 
   if (players.length === 0) {
-    return <div className="empty-note">No players registered yet.</div>;
+    return <div className="empty-note">No buyable players yet.</div>;
   }
 
   return (
@@ -87,21 +92,29 @@ export function PlayersDirectory({
                 <th>Name</th>
                 <th>City</th>
                 <th>Role</th>
-                <th>Experience</th>
+                <th>Matches / Runs / Wickets</th>
+                {showEligibility ? <th>Eligibility</th> : null}
                 <th>Contact</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {list.map((player) => (
-                <tr key={player.id}>
+                <tr key={player.id} className={isBuyable(player) ? undefined : "not-buyable"}>
                   <td>
                     <strong>{player.full_name}</strong>
                     {player.franchise_name ? <div className="muted">{player.franchise_name}</div> : null}
                   </td>
                   <td>{player.city}</td>
                   <td>{player.playing_role}</td>
-                  <td>{player.experience}</td>
+                  <td>
+                    <PlayerStatsStrip player={player} />
+                  </td>
+                  {showEligibility ? (
+                    <td>
+                      <EligibilityBadge player={player} />
+                    </td>
+                  ) : null}
                   <td>
                     {player.phone}
                     <div className="muted">{player.email}</div>
@@ -132,6 +145,7 @@ export function PlayersDirectory({
                   <p className="p-role">
                     {player.playing_role} · {player.city}
                   </p>
+                  <PlayerStatsStrip player={player} linked={false} />
                   <span className="p-badge" style={{ background: color }}>
                     {player.franchise_name || "Unassigned"}
                   </span>

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { updateOwnProfile } from "@/app/actions/players";
+import { EligibilityBadge } from "@/components/EligibilityBadge";
 import { Nav } from "@/components/Nav";
+import { PlayerStatsDetail } from "@/components/PlayerStats";
 import { ProfileForm } from "@/components/ProfileForm";
 import { getProfileByUserId } from "@/lib/queries";
 import { getSession } from "@/lib/session";
@@ -38,10 +40,12 @@ export default async function AccountPage() {
         <div className="wrap">
           <div className="eyebrow">YOUR PROFILE</div>
           <h1>{user.displayName}</h1>
+          {profile ? <EligibilityBadge player={profile} /> : null}
         </div>
       </section>
       <section className="players-section">
         <div className="wrap narrow">
+          {profile ? <PlayerStatsDetail player={profile} /> : null}
           <div className="form-card">
             {profile ? (
               <ProfileForm player={profile} action={updateOwnProfile} />

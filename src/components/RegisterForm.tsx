@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { registerPlayer, type ActionState } from "@/app/actions/auth";
+import { SAMPLE_SHARE_URL } from "@/lib/cricheroes";
 import { CitySelect, ExperienceSelect, RoleSelect, TextField } from "./FormFields";
 
 const initial: ActionState = {};
@@ -79,6 +80,33 @@ export function RegisterForm({ compact = false }: { compact?: boolean }) {
           full
           error={state.fieldErrors?.experience}
         />
+      </div>
+      <div className="frow">
+        <TextField
+          id="cricheroesUrl"
+          name="cricheroesUrl"
+          label="CricHeroes profile"
+          placeholder={SAMPLE_SHARE_URL}
+          required
+          full
+          error={state.fieldErrors?.cricheroesUrl}
+        />
+      </div>
+      <div className="check-row">
+        <label>
+          <input type="checkbox" name="nepaliCitizen" value="yes" required />
+          I am a Nepali national
+        </label>
+        {state.fieldErrors?.nepaliCitizen ? (
+          <span className="field-error">{state.fieldErrors.nepaliCitizen}</span>
+        ) : null}
+        <label>
+          <input type="checkbox" name="germanyLegalResident" value="yes" required />
+          I have legal status and live in Germany
+        </label>
+        {state.fieldErrors?.germanyLegalResident ? (
+          <span className="field-error">{state.fieldErrors.germanyLegalResident}</span>
+        ) : null}
       </div>
       <button type="submit" className="btn btn-primary" style={{ width: "100%" }} disabled={pending}>
         {pending ? "Saving…" : "Register to play"}

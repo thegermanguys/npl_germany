@@ -362,3 +362,39 @@ button.g-item{
   .profile-grid,.admin-split,.franchise-admin,.stat-cards{grid-template-columns:1fr;}
   .profile-dl{grid-template-columns:1fr;}
 }
+
+.check-row{display:flex;flex-direction:column;gap:8px;margin:4px 0 16px;}
+.check-row label{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--navy);}
+.check-row input{margin-top:3px;}
+.elig-badge{
+  display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;
+  letter-spacing:0.04em;font-weight:600;color:var(--white);
+  padding:4px 8px;border-radius:3px;background:var(--muted);margin-top:14px;
+}
+.elig-badge.elig-pending{background:#C4841D;}
+.elig-badge.elig-confirmed,.elig-badge.buyable{background:#1E8A72;}
+.elig-badge.elig-rejected{background:var(--crimson-dark);}
+.elig-review{margin:20px 0;padding-top:16px;border-top:1px solid var(--line);}
+.elig-review-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+.elig-review-head .elig-badge{margin-top:0;}
+.elig-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-ghost-ink{background:transparent;color:var(--navy);border-color:var(--line);}
+.btn-ghost-ink:hover{border-color:var(--navy);}
+.ch-card-stats{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin-top:10px;}
+.ch-stat{
+  min-width:72px;background:var(--navy);color:var(--white);border-radius:6px;
+  padding:10px 12px;text-align:center;
+}
+.ch-stat strong{display:block;font-family:'Anton',sans-serif;font-size:22px;line-height:1;}
+.ch-stat span{
+  display:block;margin-top:4px;font-family:'IBM Plex Mono',monospace;
+  font-size:10px;letter-spacing:0.06em;text-transform:uppercase;opacity:0.8;
+}
+.stats-link{font-size:12.5px;font-weight:600;color:var(--crimson);align-self:center;}
+.player-card .ch-stat{background:var(--crimson);}
+.stats-detail{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:22px 24px;margin-bottom:20px;}
+.stats-detail-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px;}
+.stats-detail h3{font-family:'Inter',sans-serif;text-transform:none;font-size:16px;margin:0;}
+.stats-detail a{color:var(--crimson);font-weight:600;font-size:13px;}
+.p-stats{font-size:12.5px;color:var(--navy);margin:0 0 8px;font-weight:600;}
+tr.not-buyable{opacity:0.55;}

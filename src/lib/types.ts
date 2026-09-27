@@ -27,6 +27,12 @@ export type ExperienceLevel = (typeof EXPERIENCE_LEVELS)[number];
 export const SEASON_STATUSES = ["registration", "auction", "active", "completed"] as const;
 export type SeasonStatus = (typeof SEASON_STATUSES)[number];
 
+export const ELIGIBILITY_STATUSES = ["pending", "confirmed", "rejected"] as const;
+export type EligibilityStatus = (typeof ELIGIBILITY_STATUSES)[number];
+
+export const STATS_SOURCES = ["none", "cricheroes", "manual"] as const;
+export type StatsSource = (typeof STATS_SOURCES)[number];
+
 export const BATTING_HANDS = ["Right", "Left"] as const;
 export const BOWLING_STYLES = [
   "Right-arm medium",
@@ -87,6 +93,21 @@ export type PlayerProfileRow = {
   batting_hand: string | null;
   bowling_style: string | null;
   franchise_id: string | null;
+  nepali_citizen: boolean;
+  germany_legal_resident: boolean;
+  eligibility_status: EligibilityStatus;
+  eligibility_reviewed_at: string | null;
+  cricheroes_url: string | null;
+  stats_source: StatsSource;
+  stats_matches: number | null;
+  stats_runs: number | null;
+  stats_wickets: number | null;
+  stats_batting_avg: number | null;
+  stats_strike_rate: number | null;
+  stats_economy: number | null;
+  stats_high_score: number | null;
+  stats_best_bowling: string | null;
+  stats_fetched_at: string | null;
   created_at: string;
   updated_at: string;
 };

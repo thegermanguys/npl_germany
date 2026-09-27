@@ -3,7 +3,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { ballLabel, isDatabaseConfigured } from "@/lib/db";
-import { countUsersByRole, getCurrentSeason, listPlayers } from "@/lib/queries";
+import { EligibilityBadge } from "@/components/EligibilityBadge";
+import { EligibilityReview } from "@/components/EligibilityReview";
+import { PlayerStatsStrip } from "@/components/PlayerStats";
+import { countPendingEligibility, countUsersByRole, getCurrentSeason, listPlayers } from "@/lib/queries";
 import { getSession, isAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Admin" };
@@ -26,7 +29,11 @@ export default async function AdminPage() {
     );
   }
 
-  const [season, counts] = await Promise.all([getCurrentSeason(), countUsersByRole()]);
+  const [season, counts, pending] = await Promise.all([
+    getCurrentSeason(),
+    countUsersByRole(),
+    countPendingEligibility(),
+  ]);
   const players = season ? await listPlayers(season.id) : [];
 
   return (
@@ -60,8 +67,8 @@ export default async function AdminPage() {
               <div className="v">{season ? ballLabel(season.ball_type) : "Deuce ball"}</div>
             </div>
             <div className="stat-card">
-              <div className="k">Status</div>
-              <div className="v">{season?.status ?? "—"}</div>
+              <div className="k">Pending</div>
+              <div className="v">{pending}</div>
             </div>
           </div>
           <div className="table-wrap">
@@ -70,7 +77,8 @@ export default async function AdminPage() {
                 <tr>
                   <th>Name</th>
                   <th>City</th>
-                  <th>Role</th>
+                  <th>Stats</th>
+                  <th>Eligibility</th>
                   <th></th>
                 </tr>
               </thead>
@@ -79,7 +87,13 @@ export default async function AdminPage() {
                   <tr key={player.id}>
                     <td>{player.full_name}</td>
                     <td>{player.city}</td>
-                    <td>{player.playing_role}</td>
+                    <td>
+                      <PlayerStatsStrip player={player} />
+                    </td>
+                    <td>
+                      <EligibilityBadge player={player} />
+                      <EligibilityReview player={player} />
+                    </td>
                     <td>
                       <Link href={`/players/${player.id}`}>Open</Link>
                     </td>

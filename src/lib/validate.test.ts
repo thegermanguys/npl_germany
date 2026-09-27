@@ -34,6 +34,9 @@ describe("validateRegistration", () => {
     city: "Berlin",
     playingRole: "All-rounder",
     experience: "Deuce-ball league experience",
+    nepaliCitizen: true,
+    germanyLegalResident: true,
+    cricheroesUrl: "https://chshare.link/player/gwWBUh",
   };
 
   it("accepts a short complete signup", () => {
@@ -59,6 +62,21 @@ describe("validateRegistration", () => {
       assert.ok(result.errors.playingRole);
     }
   });
+
+  it("rejects missing eligibility and a bad CricHeroes URL", () => {
+    const result = validateRegistration({
+      ...valid,
+      nepaliCitizen: false,
+      germanyLegalResident: false,
+      cricheroesUrl: "https://example.com/me",
+    });
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.ok(result.errors.nepaliCitizen);
+      assert.ok(result.errors.germanyLegalResident);
+      assert.ok(result.errors.cricheroesUrl);
+    }
+  });
 });
 
 describe("validateLogin", () => {
@@ -79,6 +97,9 @@ describe("validateProfileUpdate", () => {
       experience: "Played club cricket in Nepal",
       battingHand: "",
       bowlingStyle: "",
+      nepaliCitizen: true,
+      germanyLegalResident: true,
+      cricheroesUrl: "https://cricheroes.com/player-profile/9279138/Awanish",
     });
     assert.equal(result.ok, true);
   });

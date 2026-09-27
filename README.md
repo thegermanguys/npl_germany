@@ -33,9 +33,18 @@ six franchises, creates Season 1 as deuce ball, and creates the admin user.
 
 | Role | How the account is created | What they see |
 | --- | --- | --- |
-| Player | Self-register on `/register` or the home form | Own profile |
-| Franchise owner | Admin creates the account | Full player list and profiles |
-| Admin | `npm run db:setup` using `ADMIN_*` | Users, franchises, season, player records |
+| Player | Self-register on `/register` or the home form | Own profile, CricHeroes, stats |
+| Franchise owner | Admin creates the account | Eligible (buyable) player list, profiles, stats |
+| Admin | `npm run db:setup` using `ADMIN_*` | Users, eligibility, franchises, season, player records |
+
+Season 1 eligibility is Nepali + legal status living in Germany. Admin confirms or rejects.
+Only confirmed eligible players are buyable in the auction list.
+
+CricHeroes: store a `chshare.link/player/…` or `cricheroes.com/player-profile/…` URL.
+Share links are followed to the player page (sample: https://chshare.link/player/gwWBUh →
+Awanish, 38 Matches / 422 Runs / 21 Wickets). The auction list and profile use that
+three-stat card. There is no CricHeroes API key. If the page cannot be read, enter the
+same card stats by hand. The profile link stays on the list.
 
 ## Scripts
 

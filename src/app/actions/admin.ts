@@ -3,6 +3,7 @@
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { DbNotConfiguredError } from "@/lib/db";
+import { resolvePlayerStats, statsFromForm } from "@/lib/cricheroes";
 import {
   assignFranchiseOwner,
   createPlayerProfile,
@@ -10,12 +11,19 @@ import {
   getCurrentSeason,
   getProfileById,
   getUserByEmail,
+  setEligibility,
   updateFranchise,
   updatePlayerProfile,
   updateSeason,
 } from "@/lib/queries";
 import { getSession, isAdmin } from "@/lib/session";
-import { isSeasonStatus, validateNewAccount, validateProfileUpdate } from "@/lib/validate";
+import {
+  checkboxOn,
+  isEligibilityStatus,
+  isSeasonStatus,
+  validateNewAccount,
+  validateProfileUpdate,
+} from "@/lib/validate";
 import type { ActionState } from "./auth";
 
 async function requireAdmin(): Promise<ActionState | null> {
@@ -63,6 +71,8 @@ export async function createAccount(
         city: "Other city",
         playingRole: "All-rounder",
         experience: "New to organised cricket",
+        nepaliCitizen: false,
+        germanyLegalResident: false,
       });
     }
   } catch (error) {
@@ -94,6 +104,9 @@ export async function adminUpdatePlayer(
     experience: String(formData.get("experience") ?? ""),
     battingHand: String(formData.get("battingHand") ?? ""),
     bowlingStyle: String(formData.get("bowlingStyle") ?? ""),
+    nepaliCitizen: checkboxOn(formData.get("nepaliCitizen")),
+    germanyLegalResident: checkboxOn(formData.get("germanyLegalResident")),
+    cricheroesUrl: String(formData.get("cricheroesUrl") ?? ""),
   });
   if (!parsed.ok) return { fieldErrors: parsed.errors };
 
@@ -102,6 +115,7 @@ export async function adminUpdatePlayer(
   try {
     const profile = await getProfileById(profileId);
     if (!profile) return { error: "Player not found." };
+    const resolved = await resolvePlayerStats(parsed.value.cricheroesUrl, statsFromForm(formData));
     await updatePlayerProfile(profile.id, {
       fullName: parsed.value.fullName,
       phone: parsed.value.phone,
@@ -111,6 +125,11 @@ export async function adminUpdatePlayer(
       battingHand: parsed.value.battingHand || null,
       bowlingStyle: parsed.value.bowlingStyle || null,
       franchiseId: franchiseId || null,
+      nepaliCitizen: true,
+      germanyLegalResident: true,
+      cricheroesUrl: resolved.url,
+      stats: resolved.stats,
+      statsSource: resolved.source,
     });
   } catch (error) {
     if (error instanceof DbNotConfiguredError) {
@@ -178,5 +197,35 @@ export async function adminUpdateSeason(
 
   revalidatePath("/");
   revalidatePath("/admin/season");
+  return {};
+}
+
+export async function adminSetEligibility(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
+  const profileId = String(formData.get("profileId") ?? "");
+  const status = String(formData.get("eligibilityStatus") ?? "");
+  if (!profileId || !isEligibilityStatus(status) || status === "pending") {
+    return { error: "Choose confirm or reject." };
+  }
+
+  try {
+    const profile = await getProfileById(profileId);
+    if (!profile) return { error: "Player not found." };
+    await setEligibility(profile.id, status);
+  } catch (error) {
+    if (error instanceof DbNotConfiguredError) {
+      return { error: "The league database is not connected yet." };
+    }
+    return { error: "Could not update eligibility." };
+  }
+
+  revalidatePath("/players");
+  revalidatePath(`/players/${profileId}`);
+  revalidatePath("/admin");
   return {};
 }

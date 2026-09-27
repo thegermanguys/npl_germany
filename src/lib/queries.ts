@@ -1,13 +1,62 @@
+import type { PlayerStats } from "./cricheroes";
 import { getSql } from "./db";
 import type {
+  EligibilityStatus,
   FranchiseRow,
   PlayerListItem,
   PlayerProfileRow,
   Role,
   SeasonRow,
   SeasonStatus,
+  StatsSource,
   UserRow,
 } from "./types";
+
+function asNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function asBool(value: unknown): boolean {
+  return value === true || value === "t" || value === "true";
+}
+
+function mapPlayer(row: Record<string, unknown>): PlayerListItem {
+  return {
+    id: String(row.id),
+    user_id: String(row.user_id),
+    season_id: String(row.season_id),
+    full_name: String(row.full_name),
+    phone: (row.phone as string | null) ?? null,
+    city: String(row.city),
+    playing_role: row.playing_role as PlayerListItem["playing_role"],
+    experience: String(row.experience),
+    batting_hand: (row.batting_hand as string | null) ?? null,
+    bowling_style: (row.bowling_style as string | null) ?? null,
+    franchise_id: (row.franchise_id as string | null) ?? null,
+    nepali_citizen: asBool(row.nepali_citizen),
+    germany_legal_resident: asBool(row.germany_legal_resident),
+    eligibility_status: (row.eligibility_status as EligibilityStatus) ?? "pending",
+    eligibility_reviewed_at: (row.eligibility_reviewed_at as string | null) ?? null,
+    cricheroes_url: (row.cricheroes_url as string | null) ?? null,
+    stats_source: (row.stats_source as StatsSource) ?? "none",
+    stats_matches: asNumber(row.stats_matches),
+    stats_runs: asNumber(row.stats_runs),
+    stats_wickets: asNumber(row.stats_wickets),
+    stats_batting_avg: asNumber(row.stats_batting_avg),
+    stats_strike_rate: asNumber(row.stats_strike_rate),
+    stats_economy: asNumber(row.stats_economy),
+    stats_high_score: asNumber(row.stats_high_score),
+    stats_best_bowling: (row.stats_best_bowling as string | null) ?? null,
+    stats_fetched_at: (row.stats_fetched_at as string | null) ?? null,
+    created_at: String(row.created_at ?? ""),
+    updated_at: String(row.updated_at ?? ""),
+    email: String(row.email ?? ""),
+    franchise_name: (row.franchise_name as string | null) ?? null,
+    franchise_color: (row.franchise_color as string | null) ?? null,
+  };
+}
 
 export async function getCurrentSeason(): Promise<SeasonRow | null> {
   const sql = getSql();
@@ -153,15 +202,30 @@ export async function createPlayerProfile(input: {
   city: string;
   playingRole: string;
   experience: string;
+  nepaliCitizen?: boolean;
+  germanyLegalResident?: boolean;
+  cricheroesUrl?: string | null;
+  stats?: PlayerStats | null;
+  statsSource?: StatsSource;
 }): Promise<PlayerProfileRow> {
   const sql = getSql();
+  const stats = input.stats;
   const rows = await sql`
     INSERT INTO player_profiles (
-      user_id, season_id, full_name, phone, city, playing_role, experience
+      user_id, season_id, full_name, phone, city, playing_role, experience,
+      nepali_citizen, germany_legal_resident, cricheroes_url, stats_source,
+      stats_matches, stats_runs, stats_wickets, stats_batting_avg, stats_strike_rate,
+      stats_economy, stats_high_score, stats_best_bowling, stats_fetched_at
     )
     VALUES (
       ${input.userId}, ${input.seasonId}, ${input.fullName}, ${input.phone},
-      ${input.city}, ${input.playingRole}, ${input.experience}
+      ${input.city}, ${input.playingRole}, ${input.experience},
+      ${input.nepaliCitizen ?? false}, ${input.germanyLegalResident ?? false},
+      ${input.cricheroesUrl ?? null}, ${input.statsSource ?? "none"},
+      ${stats?.matches ?? null}, ${stats?.runs ?? null}, ${stats?.wickets ?? null},
+      ${stats?.battingAvg ?? null}, ${stats?.strikeRate ?? null}, ${stats?.economy ?? null},
+      ${stats?.highScore ?? null}, ${stats?.bestBowling ?? null},
+      ${stats ? new Date().toISOString() : null}
     )
     RETURNING id, user_id, season_id, full_name, phone, city, playing_role, experience,
               batting_hand, bowling_style, franchise_id, created_at::text, updated_at::text
@@ -174,7 +238,11 @@ export async function getProfileByUserId(userId: string): Promise<PlayerListItem
   const rows = await sql`
     SELECT p.id, p.user_id, p.season_id, p.full_name, p.phone, p.city, p.playing_role,
            p.experience, p.batting_hand, p.bowling_style, p.franchise_id,
-           p.created_at::text, p.updated_at::text,
+           p.nepali_citizen, p.germany_legal_resident, p.eligibility_status,
+           p.eligibility_reviewed_at::text, p.cricheroes_url, p.stats_source,
+           p.stats_matches, p.stats_runs, p.stats_wickets, p.stats_batting_avg,
+           p.stats_strike_rate, p.stats_economy, p.stats_high_score, p.stats_best_bowling,
+           p.stats_fetched_at::text, p.created_at::text, p.updated_at::text,
            u.email, f.full_name AS franchise_name, f.color_key AS franchise_color
     FROM player_profiles p
     JOIN users u ON u.id = p.user_id
@@ -182,7 +250,7 @@ export async function getProfileByUserId(userId: string): Promise<PlayerListItem
     WHERE p.user_id = ${userId}
     LIMIT 1
   `;
-  return (rows[0] as PlayerListItem | undefined) ?? null;
+  return rows[0] ? mapPlayer(rows[0] as Record<string, unknown>) : null;
 }
 
 export async function getProfileById(id: string): Promise<PlayerListItem | null> {
@@ -190,7 +258,11 @@ export async function getProfileById(id: string): Promise<PlayerListItem | null>
   const rows = await sql`
     SELECT p.id, p.user_id, p.season_id, p.full_name, p.phone, p.city, p.playing_role,
            p.experience, p.batting_hand, p.bowling_style, p.franchise_id,
-           p.created_at::text, p.updated_at::text,
+           p.nepali_citizen, p.germany_legal_resident, p.eligibility_status,
+           p.eligibility_reviewed_at::text, p.cricheroes_url, p.stats_source,
+           p.stats_matches, p.stats_runs, p.stats_wickets, p.stats_batting_avg,
+           p.stats_strike_rate, p.stats_economy, p.stats_high_score, p.stats_best_bowling,
+           p.stats_fetched_at::text, p.created_at::text, p.updated_at::text,
            u.email, f.full_name AS franchise_name, f.color_key AS franchise_color
     FROM player_profiles p
     JOIN users u ON u.id = p.user_id
@@ -198,7 +270,7 @@ export async function getProfileById(id: string): Promise<PlayerListItem | null>
     WHERE p.id = ${id}
     LIMIT 1
   `;
-  return (rows[0] as PlayerListItem | undefined) ?? null;
+  return rows[0] ? mapPlayer(rows[0] as Record<string, unknown>) : null;
 }
 
 export async function listPlayers(seasonId: string): Promise<PlayerListItem[]> {
@@ -206,7 +278,11 @@ export async function listPlayers(seasonId: string): Promise<PlayerListItem[]> {
   const rows = await sql`
     SELECT p.id, p.user_id, p.season_id, p.full_name, p.phone, p.city, p.playing_role,
            p.experience, p.batting_hand, p.bowling_style, p.franchise_id,
-           p.created_at::text, p.updated_at::text,
+           p.nepali_citizen, p.germany_legal_resident, p.eligibility_status,
+           p.eligibility_reviewed_at::text, p.cricheroes_url, p.stats_source,
+           p.stats_matches, p.stats_runs, p.stats_wickets, p.stats_batting_avg,
+           p.stats_strike_rate, p.stats_economy, p.stats_high_score, p.stats_best_bowling,
+           p.stats_fetched_at::text, p.created_at::text, p.updated_at::text,
            u.email, f.full_name AS franchise_name, f.color_key AS franchise_color
     FROM player_profiles p
     JOIN users u ON u.id = p.user_id
@@ -214,39 +290,28 @@ export async function listPlayers(seasonId: string): Promise<PlayerListItem[]> {
     WHERE p.season_id = ${seasonId}
     ORDER BY p.full_name
   `;
-  return rows as PlayerListItem[];
+  return rows.map((row) => mapPlayer(row as Record<string, unknown>));
 }
 
-export async function updatePlayerProfile(
-  id: string,
-  input: {
-    fullName: string;
-    phone: string;
-    city: string;
-    playingRole: string;
-    experience: string;
-    battingHand: string | null;
-    bowlingStyle: string | null;
-    franchiseId?: string | null;
-  },
-): Promise<void> {
+export type PlayerUpdateInput = {
+  fullName: string;
+  phone: string;
+  city: string;
+  playingRole: string;
+  experience: string;
+  battingHand: string | null;
+  bowlingStyle: string | null;
+  franchiseId: string | null;
+  nepaliCitizen: boolean;
+  germanyLegalResident: boolean;
+  cricheroesUrl: string | null;
+  stats: PlayerStats | null;
+  statsSource: StatsSource;
+};
+
+export async function updatePlayerProfile(id: string, input: PlayerUpdateInput): Promise<void> {
   const sql = getSql();
-  if (input.franchiseId !== undefined) {
-    await sql`
-      UPDATE player_profiles
-      SET full_name = ${input.fullName},
-          phone = ${input.phone},
-          city = ${input.city},
-          playing_role = ${input.playingRole},
-          experience = ${input.experience},
-          batting_hand = ${input.battingHand},
-          bowling_style = ${input.bowlingStyle},
-          franchise_id = ${input.franchiseId},
-          updated_at = now()
-      WHERE id = ${id}
-    `;
-    return;
-  }
+  const stats = input.stats;
   await sql`
     UPDATE player_profiles
     SET full_name = ${input.fullName},
@@ -256,9 +321,44 @@ export async function updatePlayerProfile(
         experience = ${input.experience},
         batting_hand = ${input.battingHand},
         bowling_style = ${input.bowlingStyle},
+        franchise_id = ${input.franchiseId},
+        nepali_citizen = ${input.nepaliCitizen},
+        germany_legal_resident = ${input.germanyLegalResident},
+        cricheroes_url = ${input.cricheroesUrl},
+        stats_source = ${input.statsSource},
+        stats_matches = ${stats?.matches ?? null},
+        stats_runs = ${stats?.runs ?? null},
+        stats_wickets = ${stats?.wickets ?? null},
+        stats_batting_avg = ${stats?.battingAvg ?? null},
+        stats_strike_rate = ${stats?.strikeRate ?? null},
+        stats_economy = ${stats?.economy ?? null},
+        stats_high_score = ${stats?.highScore ?? null},
+        stats_best_bowling = ${stats?.bestBowling ?? null},
+        stats_fetched_at = ${stats ? new Date().toISOString() : null},
         updated_at = now()
     WHERE id = ${id}
   `;
+}
+
+export async function setEligibility(id: string, status: EligibilityStatus): Promise<void> {
+  const sql = getSql();
+  await sql`
+    UPDATE player_profiles
+    SET eligibility_status = ${status},
+        eligibility_reviewed_at = now(),
+        nepali_citizen = CASE WHEN ${status} = 'confirmed' THEN true ELSE nepali_citizen END,
+        germany_legal_resident = CASE WHEN ${status} = 'confirmed' THEN true ELSE germany_legal_resident END,
+        updated_at = now()
+    WHERE id = ${id}
+  `;
+}
+
+export async function countPendingEligibility(): Promise<number> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT count(*)::int AS n FROM player_profiles WHERE eligibility_status = 'pending'
+  `;
+  return Number((rows[0] as { n: number } | undefined)?.n ?? 0);
 }
 
 export async function countUsersByRole(): Promise<Record<Role, number>> {

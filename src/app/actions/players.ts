@@ -1,10 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { resolvePlayerStats, statsFromForm } from "@/lib/cricheroes";
 import { DbNotConfiguredError } from "@/lib/db";
 import { getProfileByUserId, updatePlayerProfile } from "@/lib/queries";
 import { getSession } from "@/lib/session";
-import { validateProfileUpdate } from "@/lib/validate";
+import { checkboxOn, validateProfileUpdate } from "@/lib/validate";
 import type { ActionState } from "./auth";
 
 export async function updateOwnProfile(
@@ -24,12 +25,16 @@ export async function updateOwnProfile(
     experience: String(formData.get("experience") ?? ""),
     battingHand: String(formData.get("battingHand") ?? ""),
     bowlingStyle: String(formData.get("bowlingStyle") ?? ""),
+    nepaliCitizen: checkboxOn(formData.get("nepaliCitizen")),
+    germanyLegalResident: checkboxOn(formData.get("germanyLegalResident")),
+    cricheroesUrl: String(formData.get("cricheroesUrl") ?? ""),
   });
   if (!parsed.ok) return { fieldErrors: parsed.errors };
 
   try {
     const profile = await getProfileByUserId(session.userId);
     if (!profile) return { error: "No player profile found." };
+    const resolved = await resolvePlayerStats(parsed.value.cricheroesUrl, statsFromForm(formData));
     await updatePlayerProfile(profile.id, {
       fullName: parsed.value.fullName,
       phone: parsed.value.phone,
@@ -38,6 +43,12 @@ export async function updateOwnProfile(
       experience: parsed.value.experience,
       battingHand: parsed.value.battingHand || null,
       bowlingStyle: parsed.value.bowlingStyle || null,
+      franchiseId: profile.franchise_id,
+      nepaliCitizen: true,
+      germanyLegalResident: true,
+      cricheroesUrl: resolved.url,
+      stats: resolved.stats,
+      statsSource: resolved.source,
     });
   } catch (error) {
     if (error instanceof DbNotConfiguredError) {

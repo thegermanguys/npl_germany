@@ -1,16 +1,30 @@
+import { isCricHeroesUrl, normalizeCricHeroesUrl } from "./cricheroes.ts";
 import {
   BATTING_HANDS,
   BOWLING_STYLES,
   CITIES,
+  ELIGIBILITY_STATUSES,
   EXPERIENCE_LEVELS,
   PLAYING_ROLES,
   ROLES,
   SEASON_STATUSES,
+  type EligibilityStatus,
   type FieldErrors,
   type PlayingRole,
   type Role,
   type SeasonStatus,
 } from "./types.ts";
+
+export function isEligibilityStatus(value: string): value is EligibilityStatus {
+  return (ELIGIBILITY_STATUSES as readonly string[]).includes(value);
+}
+
+export function checkboxOn(value: FormDataEntryValue | string | boolean | null | undefined): boolean {
+  if (value === true) return true;
+  if (typeof value !== "string") return false;
+  const text = value.toLowerCase();
+  return text === "yes" || text === "on" || text === "true" || text === "1";
+}
 
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -40,6 +54,9 @@ export type RegistrationInput = {
   city: string;
   playingRole: string;
   experience: string;
+  nepaliCitizen: boolean;
+  germanyLegalResident: boolean;
+  cricheroesUrl: string;
 };
 
 export type RegistrationValue = {
@@ -50,6 +67,9 @@ export type RegistrationValue = {
   city: string;
   playingRole: PlayingRole;
   experience: string;
+  nepaliCitizen: boolean;
+  germanyLegalResident: boolean;
+  cricheroesUrl: string;
 };
 
 export function validateRegistration(
@@ -63,6 +83,7 @@ export function validateRegistration(
   const city = input.city.trim();
   const playingRole = input.playingRole.trim();
   const experience = input.experience.trim();
+  const cricheroesUrl = normalizeCricHeroesUrl(input.cricheroesUrl) ?? input.cricheroesUrl.trim();
 
   if (fullName.length < 2) errors.fullName = "Enter your name.";
   if (!isValidEmail(email)) errors.email = "Enter a valid email.";
@@ -73,13 +94,31 @@ export function validateRegistration(
   if (!(EXPERIENCE_LEVELS as readonly string[]).includes(experience)) {
     errors.experience = "Choose your experience.";
   }
+  if (!input.nepaliCitizen) errors.nepaliCitizen = "Season 1 is for Nepali nationals.";
+  if (!input.germanyLegalResident) {
+    errors.germanyLegalResident = "Season 1 needs legal status living in Germany.";
+  }
+  if (!isCricHeroesUrl(input.cricheroesUrl)) {
+    errors.cricheroesUrl = "Enter your CricHeroes profile URL.";
+  }
 
-  if (Object.keys(errors).length || !isPlayingRole(playingRole)) {
+  if (Object.keys(errors).length || !isPlayingRole(playingRole) || !isCricHeroesUrl(input.cricheroesUrl)) {
     return { ok: false, errors };
   }
   return {
     ok: true,
-    value: { fullName, email, password, phone, city, playingRole, experience },
+    value: {
+      fullName,
+      email,
+      password,
+      phone,
+      city,
+      playingRole,
+      experience,
+      nepaliCitizen: true,
+      germanyLegalResident: true,
+      cricheroesUrl,
+    },
   };
 }
 
@@ -91,11 +130,14 @@ export type ProfileUpdateInput = {
   experience: string;
   battingHand: string;
   bowlingStyle: string;
+  nepaliCitizen: boolean;
+  germanyLegalResident: boolean;
+  cricheroesUrl: string;
 };
 
 export function validateProfileUpdate(
   input: ProfileUpdateInput,
-): { ok: true; value: ProfileUpdateInput } | { ok: false; errors: FieldErrors } {
+): { ok: true; value: ProfileUpdateInput & { cricheroesUrl: string } } | { ok: false; errors: FieldErrors } {
   const errors: FieldErrors = {};
   const fullName = input.fullName.trim();
   const phone = input.phone.trim();
@@ -104,6 +146,7 @@ export function validateProfileUpdate(
   const experience = input.experience.trim();
   const battingHand = input.battingHand.trim();
   const bowlingStyle = input.bowlingStyle.trim();
+  const cricheroesUrl = normalizeCricHeroesUrl(input.cricheroesUrl) ?? input.cricheroesUrl.trim();
 
   if (fullName.length < 2) errors.fullName = "Enter a name.";
   if (!phone) errors.phone = "Enter a phone number.";
@@ -118,11 +161,29 @@ export function validateProfileUpdate(
   if (bowlingStyle && !(BOWLING_STYLES as readonly string[]).includes(bowlingStyle)) {
     errors.bowlingStyle = "Choose a bowling style.";
   }
+  if (!input.nepaliCitizen) errors.nepaliCitizen = "Season 1 is for Nepali nationals.";
+  if (!input.germanyLegalResident) {
+    errors.germanyLegalResident = "Season 1 needs legal status living in Germany.";
+  }
+  if (!isCricHeroesUrl(input.cricheroesUrl)) {
+    errors.cricheroesUrl = "Enter a CricHeroes profile URL.";
+  }
 
   if (Object.keys(errors).length) return { ok: false, errors };
   return {
     ok: true,
-    value: { fullName, phone, city, playingRole, experience, battingHand, bowlingStyle },
+    value: {
+      fullName,
+      phone,
+      city,
+      playingRole,
+      experience,
+      battingHand,
+      bowlingStyle,
+      nepaliCitizen: true,
+      germanyLegalResident: true,
+      cricheroesUrl,
+    },
   };
 }
 

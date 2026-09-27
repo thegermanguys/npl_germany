@@ -21,7 +21,7 @@ export default async function RegisterPage() {
         <div className="wrap">
           <div className="eyebrow">SEASON 1 · DEUCE BALL</div>
           <h1>Register to play</h1>
-          <p className="lede">Name, contact, and the profile owners see in auction.</p>
+          <p className="lede">Name, contact, eligibility, and your CricHeroes profile.</p>
         </div>
       </section>
       <section className="players-section">

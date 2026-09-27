@@ -10,6 +10,7 @@ import {
   RoleSelect,
   TextField,
 } from "./FormFields";
+import { SAMPLE_SHARE_URL } from "@/lib/cricheroes";
 import type { FranchiseRow, PlayerListItem } from "@/lib/types";
 
 export function ProfileForm({
@@ -90,6 +91,95 @@ export function ProfileForm({
           label="Bowling"
           defaultValue={player.bowling_style ?? ""}
           error={state.fieldErrors?.bowlingStyle}
+        />
+      </div>
+      <div className="frow">
+        <TextField
+          id="cricheroesUrl"
+          name="cricheroesUrl"
+          label="CricHeroes profile"
+          defaultValue={player.cricheroes_url ?? ""}
+          placeholder={SAMPLE_SHARE_URL}
+          required
+          full
+          error={state.fieldErrors?.cricheroesUrl}
+        />
+      </div>
+      <div className="check-row">
+        <label>
+          <input type="checkbox" name="nepaliCitizen" value="yes" defaultChecked={player.nepali_citizen} />
+          Nepali national
+        </label>
+        {state.fieldErrors?.nepaliCitizen ? (
+          <span className="field-error">{state.fieldErrors.nepaliCitizen}</span>
+        ) : null}
+        <label>
+          <input
+            type="checkbox"
+            name="germanyLegalResident"
+            value="yes"
+            defaultChecked={player.germany_legal_resident}
+          />
+          Legal status living in Germany
+        </label>
+        {state.fieldErrors?.germanyLegalResident ? (
+          <span className="field-error">{state.fieldErrors.germanyLegalResident}</span>
+        ) : null}
+      </div>
+      <div className="frow">
+        <TextField
+          id="statsMatches"
+          name="statsMatches"
+          label="Matches"
+          defaultValue={player.stats_matches?.toString() ?? ""}
+        />
+        <TextField
+          id="statsRuns"
+          name="statsRuns"
+          label="Runs"
+          defaultValue={player.stats_runs?.toString() ?? ""}
+        />
+      </div>
+      <div className="frow">
+        <TextField
+          id="statsWickets"
+          name="statsWickets"
+          label="Wickets"
+          defaultValue={player.stats_wickets?.toString() ?? ""}
+        />
+        <TextField
+          id="statsBattingAvg"
+          name="statsBattingAvg"
+          label="Bat avg"
+          defaultValue={player.stats_batting_avg?.toString() ?? ""}
+        />
+      </div>
+      <div className="frow">
+        <TextField
+          id="statsStrikeRate"
+          name="statsStrikeRate"
+          label="Strike rate"
+          defaultValue={player.stats_strike_rate?.toString() ?? ""}
+        />
+        <TextField
+          id="statsEconomy"
+          name="statsEconomy"
+          label="Economy"
+          defaultValue={player.stats_economy?.toString() ?? ""}
+        />
+      </div>
+      <div className="frow">
+        <TextField
+          id="statsHighScore"
+          name="statsHighScore"
+          label="High score"
+          defaultValue={player.stats_high_score?.toString() ?? ""}
+        />
+        <TextField
+          id="statsBestBowling"
+          name="statsBestBowling"
+          label="Best bowling"
+          defaultValue={player.stats_best_bowling ?? ""}
         />
       </div>
       {assignFranchise && franchises ? (

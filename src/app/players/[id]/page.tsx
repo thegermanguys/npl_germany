@@ -2,9 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { adminUpdatePlayer } from "@/app/actions/admin";
+import { EligibilityBadge } from "@/components/EligibilityBadge";
+import { EligibilityReview } from "@/components/EligibilityReview";
 import { Nav } from "@/components/Nav";
+import { PlayerStatsDetail } from "@/components/PlayerStats";
 import { ProfileForm } from "@/components/ProfileForm";
 import { DbNotConfiguredError, ballLabel, isDatabaseConfigured } from "@/lib/db";
+import { canViewPlayer } from "@/lib/eligibility";
 import { getCurrentSeason, getProfileById, listFranchises } from "@/lib/queries";
 import { canInspectPlayers, getSession, isAdmin } from "@/lib/session";
 
@@ -59,6 +63,7 @@ export default async function PlayerProfilePage({
     throw error;
   }
   if (!player) notFound();
+  if (!canViewPlayer(player, user)) notFound();
 
   const inspect = canInspectPlayers(user) || user?.userId === player.user_id;
   const admin = isAdmin(user);
@@ -76,6 +81,7 @@ export default async function PlayerProfilePage({
             {player.playing_role} · {player.city}
             {player.franchise_name ? ` · ${player.franchise_name}` : ""}
           </p>
+          <EligibilityBadge player={player} />
         </div>
       </section>
       <section className="players-section">
@@ -126,7 +132,17 @@ export default async function PlayerProfilePage({
                 <dt>Franchise</dt>
                 <dd>{player.franchise_name || "Unassigned"}</dd>
               </div>
+              <div>
+                <dt>Nepali</dt>
+                <dd>{player.nepali_citizen ? "Yes" : "No"}</dd>
+              </div>
+              <div>
+                <dt>Lives in Germany</dt>
+                <dd>{player.germany_legal_resident ? "Legal resident" : "No"}</dd>
+              </div>
             </dl>
+            <PlayerStatsDetail player={player} />
+            {admin ? <EligibilityReview player={player} /> : null}
             <Link href="/players">Back to players</Link>
           </div>
           {admin ? (
