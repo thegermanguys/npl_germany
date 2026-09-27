@@ -33,6 +33,18 @@ Vercel preview/production builds run the same setup via `vercel-build` when
 need it at runtime). The app reads the pooled `DATABASE_URL`. Setup prefers
 `DATABASE_URL_UNPOOLED` or `DIRECT_URL` when those are present.
 
+This repo is a Next.js app at the project root (`vercel.json` sets the
+framework). In the Vercel project **npl-germany**:
+
+1. Settings → General → Framework Preset → **Next.js**. Leave Output Directory
+   empty. Root Directory must stay empty / `.` (not `public`).
+2. Settings → Domains → assign **nplgermany.thegermanguy.org** to this
+   project’s Production. `npl-germany.vercel.app` should stay on the same
+   project (it currently redirects to the custom domain).
+3. Redeploy Production after those settings match. A leftover **Other**
+   framework or Output Directory of `public` / `.` serves no `index.html` and
+   returns Vercel’s platform `4040 NOT_FOUND`.
+
 ## Roles
 
 | Role | How the account is created | What they see |
