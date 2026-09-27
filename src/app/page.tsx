@@ -4,12 +4,14 @@ import { FranchiseIcon } from "@/components/FranchiseIcon";
 import { Nav } from "@/components/Nav";
 import { RegisterForm } from "@/components/RegisterForm";
 import { ballLabel } from "@/lib/db";
+import { mediaPath } from "@/lib/media";
 import { loadPortal } from "@/lib/portal";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const { user, season } = await loadPortal();
+  const { user, season, franchises } = await loadPortal();
+  const logos = new Map(franchises.map((row) => [row.slug, row.logo_id]));
   const ball = season ? ballLabel(season.ball_type) : "Deuce ball";
 
   return (
@@ -141,22 +143,31 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="fr-grid">
-            {FRANCHISE_COPY.map((franchise) => (
-              <div className="fr-card" id={`f-${franchise.city.toLowerCase()}`} key={franchise.slug}>
-                <div className="fr-top" style={{ background: `var(--${franchise.colorVar})` }}>
-                  <div className="fr-city">{franchise.city.toUpperCase()}</div>
-                  <h3>{franchise.name}</h3>
-                  <FranchiseIcon icon={franchise.icon} />
+            {FRANCHISE_COPY.map((franchise) => {
+              const logoId = logos.get(franchise.slug);
+              return (
+                <div className="fr-card" id={`f-${franchise.city.toLowerCase()}`} key={franchise.slug}>
+                  <div className="fr-top" style={{ background: `var(--${franchise.colorVar})` }}>
+                    <div className="fr-city">{franchise.city.toUpperCase()}</div>
+                    <h3>{franchise.name}</h3>
+                    <div className="fr-logo">
+                      {logoId ? (
+                        <img src={mediaPath(logoId)} alt={`${franchise.city} ${franchise.name} logo`} />
+                      ) : (
+                        <FranchiseIcon icon={franchise.icon} />
+                      )}
+                    </div>
+                  </div>
+                  <div className="fr-body">
+                    <div className="tag">&ldquo;{franchise.tagline}&rdquo;</div>
+                    <p>{franchise.description}</p>
+                    <Link className="fr-link" href="/players">
+                      View players →
+                    </Link>
+                  </div>
                 </div>
-                <div className="fr-body">
-                  <div className="tag">&ldquo;{franchise.tagline}&rdquo;</div>
-                  <p>{franchise.description}</p>
-                  <Link className="fr-link" href="/players">
-                    View players →
-                  </Link>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

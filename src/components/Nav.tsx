@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { leagueLogoUrl } from "@/lib/branding";
 import type { SessionUser } from "@/lib/types";
 import { SignOutButton } from "./SignOutButton";
 
-export function Nav({
+export async function Nav({
   user,
   active,
 }: {
@@ -11,12 +12,17 @@ export function Nav({
 }) {
   const ctaHref = user ? (user.role === "admin" ? "/admin" : user.role === "franchise_owner" ? "/players" : "/account") : "/register";
   const ctaLabel = user ? user.displayName : "Register to play";
+  const logoUrl = await leagueLogoUrl();
 
   return (
     <nav className="nav">
       <div className="wrap">
         <Link className="brand" href="/">
-          <span className="mark">N</span>
+          {logoUrl ? (
+            <img className="mark mark-photo" src={logoUrl} alt="" />
+          ) : (
+            <span className="mark">N</span>
+          )}
           <span className="word">
             NPL <span>GERMANY</span>
           </span>

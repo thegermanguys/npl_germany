@@ -2,6 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
+import { isUsablePasswordHash } from "@/lib/admin-account";
 import { emptyStats, resolvePlayerStats } from "@/lib/cricheroes";
 import { DbNotConfiguredError } from "@/lib/db";
 import { createPlayerProfile, createUser, getCurrentSeason, getUserByEmail } from "@/lib/queries";
@@ -91,7 +92,11 @@ export async function loginUser(
 
   try {
     const user = await getUserByEmail(parsed.value.email);
-    if (!user || !bcrypt.compareSync(parsed.value.password, user.password_hash)) {
+    if (
+      !user ||
+      !isUsablePasswordHash(user.password_hash) ||
+      !bcrypt.compareSync(parsed.value.password, user.password_hash)
+    ) {
       return { error: "Email or password is wrong." };
     }
     await setSession({

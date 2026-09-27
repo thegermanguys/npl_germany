@@ -59,6 +59,7 @@ export type FranchiseRow = {
   description: string;
   color_key: string;
   sort_order: number;
+  logo_id: string | null;
 };
 
 export type SeasonRow = {
@@ -97,6 +98,7 @@ export type PlayerProfileRow = {
   stats_high_score: number | null;
   stats_best_bowling: string | null;
   stats_fetched_at: string | null;
+  photo_id: string | null;
   created_at: string;
   updated_at: string;
 };

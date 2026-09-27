@@ -3,8 +3,10 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { isBuyable } from "@/lib/eligibility";
+import { mediaPath } from "@/lib/media";
 import type { PlayerListItem } from "@/lib/types";
 import { EligibilityBadge } from "./EligibilityBadge";
+import { PhotoCircle } from "./PhotoCircle";
 import { PlayerStatsStrip } from "./PlayerStats";
 
 const FRANCHISE_COLORS: Record<string, string> = {
@@ -102,8 +104,17 @@ export function PlayersDirectory({
               {list.map((player) => (
                 <tr key={player.id} className={isBuyable(player) ? undefined : "not-buyable"}>
                   <td>
-                    <strong>{player.full_name}</strong>
-                    {player.franchise_name ? <div className="muted">{player.franchise_name}</div> : null}
+                    <div className="name-with-photo">
+                      <PhotoCircle
+                        src={player.photo_id ? mediaPath(player.photo_id) : null}
+                        name={player.full_name}
+                        size="sm"
+                      />
+                      <div>
+                        <strong>{player.full_name}</strong>
+                        {player.franchise_name ? <div className="muted">{player.franchise_name}</div> : null}
+                      </div>
+                    </div>
                   </td>
                   <td>{player.city}</td>
                   <td>{player.playing_role}</td>
@@ -135,11 +146,13 @@ export function PlayersDirectory({
               : "var(--navy)";
             return (
               <Link className="player-card" key={player.id} href={`/players/${player.id}`}>
-                <img
-                  className="photo"
-                  src="/images/players/avatar-placeholder.jpg"
-                  alt=""
-                />
+                <div className="player-card-photo">
+                  <PhotoCircle
+                    src={player.photo_id ? mediaPath(player.photo_id) : null}
+                    name={player.full_name}
+                    size="md"
+                  />
+                </div>
                 <div className="info">
                   <p className="p-name">{player.full_name}</p>
                   <p className="p-role">

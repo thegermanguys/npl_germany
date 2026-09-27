@@ -2,13 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { adminUpdatePlayer } from "@/app/actions/admin";
+import { uploadPlayerPhoto } from "@/app/actions/media";
 import { EligibilityBadge } from "@/components/EligibilityBadge";
 import { EligibilityReview } from "@/components/EligibilityReview";
 import { Nav } from "@/components/Nav";
+import { PhotoCircle } from "@/components/PhotoCircle";
+import { PhotoUpload } from "@/components/PhotoUpload";
 import { PlayerStatsDetail } from "@/components/PlayerStats";
 import { ProfileForm } from "@/components/ProfileForm";
 import { DbNotConfiguredError, ballLabel, isDatabaseConfigured } from "@/lib/db";
 import { canViewPlayer } from "@/lib/eligibility";
+import { mediaPath } from "@/lib/media";
 import { getCurrentSeason, getProfileById, listFranchises } from "@/lib/queries";
 import { canInspectPlayers, getSession, isAdmin } from "@/lib/session";
 
@@ -72,21 +76,35 @@ export default async function PlayerProfilePage({
     <>
       <Nav user={user} active="players" />
       <section className="page-hero">
-        <div className="wrap">
-          <div className="eyebrow">
-            {season?.name ?? "SEASON 1"} · {season ? ballLabel(season.ball_type).toUpperCase() : "DEUCE BALL"}
+        <div className="wrap profile-hero">
+          <PhotoCircle
+            src={player.photo_id ? mediaPath(player.photo_id) : null}
+            name={player.full_name}
+            size="lg"
+          />
+          <div>
+            <div className="eyebrow">
+              {season?.name ?? "SEASON 1"} · {season ? ballLabel(season.ball_type).toUpperCase() : "DEUCE BALL"}
+            </div>
+            <h1>{player.full_name}</h1>
+            <p className="lede">
+              {player.playing_role} · {player.city}
+              {player.franchise_name ? ` · ${player.franchise_name}` : ""}
+            </p>
+            <EligibilityBadge player={player} />
           </div>
-          <h1>{player.full_name}</h1>
-          <p className="lede">
-            {player.playing_role} · {player.city}
-            {player.franchise_name ? ` · ${player.franchise_name}` : ""}
-          </p>
-          <EligibilityBadge player={player} />
         </div>
       </section>
       <section className="players-section">
         <div className="wrap profile-grid">
           <div className="profile-card">
+            {user?.userId === player.user_id || admin ? (
+              <PhotoUpload
+                action={uploadPlayerPhoto}
+                label="Photo"
+                hidden={{ profileId: player.id }}
+              />
+            ) : null}
             <dl className="profile-dl">
               <div>
                 <dt>Role</dt>

@@ -99,3 +99,23 @@ ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS stats_economy numeric;
 ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS stats_high_score integer;
 ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS stats_best_bowling text;
 ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS stats_fetched_at timestamptz;
+
+CREATE TABLE IF NOT EXISTS media_assets (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  kind text NOT NULL CHECK (kind IN ('player_photo', 'franchise_logo', 'league_logo')),
+  mime_type text NOT NULL,
+  bytes bytea NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS photo_id uuid REFERENCES media_assets(id) ON DELETE SET NULL;
+ALTER TABLE franchises ADD COLUMN IF NOT EXISTS logo_id uuid REFERENCES media_assets(id) ON DELETE SET NULL;
+
+CREATE TABLE IF NOT EXISTS league_settings (
+  id text PRIMARY KEY,
+  logo_id uuid REFERENCES media_assets(id) ON DELETE SET NULL
+);
+
+INSERT INTO league_settings (id)
+SELECT 'npl_germany'
+WHERE NOT EXISTS (SELECT 1 FROM league_settings WHERE id = 'npl_germany');

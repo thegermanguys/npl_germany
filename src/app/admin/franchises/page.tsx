@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { uploadFranchiseLogo } from "@/app/actions/media";
 import { FranchiseEditForm } from "@/components/AdminForms";
 import { Nav } from "@/components/Nav";
+import { PhotoCircle } from "@/components/PhotoCircle";
+import { PhotoUpload } from "@/components/PhotoUpload";
 import { isDatabaseConfigured } from "@/lib/db";
+import { mediaPath } from "@/lib/media";
 import { listFranchises } from "@/lib/queries";
 import { getSession, isAdmin } from "@/lib/session";
 
@@ -30,6 +34,19 @@ export default async function AdminFranchisesPage() {
         <div className="wrap franchise-admin">
           {franchises.map((franchise) => (
             <div className="form-card" key={franchise.id}>
+              <div className="fr-logo-admin">
+                <PhotoCircle
+                  src={franchise.logo_id ? mediaPath(franchise.logo_id) : null}
+                  name={franchise.full_name}
+                  size="md"
+                />
+                <PhotoUpload
+                  action={uploadFranchiseLogo}
+                  name="logo"
+                  label="Logo"
+                  hidden={{ franchiseId: franchise.id }}
+                />
+              </div>
               <FranchiseEditForm franchise={franchise} />
             </div>
           ))}
