@@ -9,7 +9,7 @@ import { loadPortal } from "@/lib/portal";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const { user, configured, season } = await loadPortal();
+  const { user, season } = await loadPortal();
   const ball = season ? ballLabel(season.ball_type) : "Deuce ball";
 
   return (
@@ -230,10 +230,8 @@ export default async function HomePage() {
               <h3>Register to play</h3>
               {user ? (
                 <p>You&apos;re signed in as {user.displayName}.</p>
-              ) : configured ? (
-                <RegisterForm compact />
               ) : (
-                <p>Registration opens once the league database is connected.</p>
+                <RegisterForm compact />
               )}
             </div>
           </div>

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { RegisterForm } from "@/components/RegisterForm";
-import { isDatabaseConfigured } from "@/lib/db";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Register" };
@@ -27,11 +26,7 @@ export default async function RegisterPage() {
       <section className="players-section">
         <div className="wrap narrow">
           <div className="form-card">
-            {isDatabaseConfigured() ? (
-              <RegisterForm />
-            ) : (
-              <p>Registration opens once the league database is connected.</p>
-            )}
+            <RegisterForm />
           </div>
         </div>
       </section>
