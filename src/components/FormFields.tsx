@@ -1,10 +1,10 @@
 import {
   BATTING_HANDS,
   BOWLING_STYLES,
-  CITIES,
   EXPERIENCE_LEVELS,
   PLAYING_ROLES,
 } from "@/lib/types";
+import { CityTypeahead } from "./CityTypeahead";
 
 export function TextField(props: {
   id: string;
@@ -64,8 +64,15 @@ export function SelectField(props: {
   );
 }
 
-export function CitySelect(props: Omit<Parameters<typeof SelectField>[0], "options">) {
-  return <SelectField {...props} options={CITIES} />;
+export function CitySelect(props: {
+  id: string;
+  name: string;
+  label: string;
+  defaultValue?: string;
+  required?: boolean;
+  error?: string;
+}) {
+  return <CityTypeahead {...props} />;
 }
 
 export function RoleSelect(props: Omit<Parameters<typeof SelectField>[0], "options">) {

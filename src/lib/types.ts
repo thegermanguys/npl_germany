@@ -4,17 +4,6 @@ export type Role = (typeof ROLES)[number];
 export const PLAYING_ROLES = ["Batter", "Bowler", "All-rounder", "Wicketkeeper"] as const;
 export type PlayingRole = (typeof PLAYING_ROLES)[number];
 
-export const CITIES = [
-  "Frankfurt",
-  "Munich",
-  "Berlin",
-  "Hamburg",
-  "Cologne",
-  "Stuttgart",
-  "Other city",
-] as const;
-export type City = (typeof CITIES)[number];
-
 export const EXPERIENCE_LEVELS = [
   "New to organised cricket",
   "Played club cricket in Nepal",

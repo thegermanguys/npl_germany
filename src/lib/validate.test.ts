@@ -55,12 +55,18 @@ describe("validateRegistration", () => {
   });
 
   it("rejects unknown roles and cities", () => {
-    const result = validateRegistration({ ...valid, city: "Leipzig", playingRole: "Captain" });
+    const result = validateRegistration({ ...valid, city: "Notacity", playingRole: "Captain" });
     assert.equal(result.ok, false);
     if (!result.ok) {
       assert.ok(result.errors.city);
       assert.ok(result.errors.playingRole);
     }
+  });
+
+  it("accepts any German city from the typeahead list", () => {
+    const result = validateRegistration({ ...valid, city: "Leipzig" });
+    assert.equal(result.ok, true);
+    if (result.ok) assert.equal(result.value.city, "Leipzig");
   });
 
   it("rejects missing eligibility and a bad CricHeroes URL", () => {

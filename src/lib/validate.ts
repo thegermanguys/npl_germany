@@ -1,8 +1,8 @@
 import { isCricHeroesUrl, normalizeCricHeroesUrl } from "./cricheroes.ts";
+import { normalizeGermanCity } from "./german-cities.ts";
 import {
   BATTING_HANDS,
   BOWLING_STYLES,
-  CITIES,
   ELIGIBILITY_STATUSES,
   EXPERIENCE_LEVELS,
   PLAYING_ROLES,
@@ -80,7 +80,7 @@ export function validateRegistration(
   const email = normalizeEmail(input.email);
   const password = input.password;
   const phone = input.phone.trim();
-  const city = input.city.trim();
+  const city = normalizeGermanCity(input.city) ?? input.city.trim();
   const playingRole = input.playingRole.trim();
   const experience = input.experience.trim();
   const cricheroesUrl = normalizeCricHeroesUrl(input.cricheroesUrl) ?? input.cricheroesUrl.trim();
@@ -89,7 +89,7 @@ export function validateRegistration(
   if (!isValidEmail(email)) errors.email = "Enter a valid email.";
   if (password.length < 8) errors.password = "Use at least 8 characters.";
   if (!phone) errors.phone = "Enter a phone number.";
-  if (!(CITIES as readonly string[]).includes(city)) errors.city = "Choose a city.";
+  if (!normalizeGermanCity(input.city)) errors.city = "Choose a city.";
   if (!isPlayingRole(playingRole)) errors.playingRole = "Choose a playing role.";
   if (!(EXPERIENCE_LEVELS as readonly string[]).includes(experience)) {
     errors.experience = "Choose your experience.";
@@ -141,7 +141,7 @@ export function validateProfileUpdate(
   const errors: FieldErrors = {};
   const fullName = input.fullName.trim();
   const phone = input.phone.trim();
-  const city = input.city.trim();
+  const city = normalizeGermanCity(input.city) ?? input.city.trim();
   const playingRole = input.playingRole.trim();
   const experience = input.experience.trim();
   const battingHand = input.battingHand.trim();
@@ -150,7 +150,7 @@ export function validateProfileUpdate(
 
   if (fullName.length < 2) errors.fullName = "Enter a name.";
   if (!phone) errors.phone = "Enter a phone number.";
-  if (!(CITIES as readonly string[]).includes(city)) errors.city = "Choose a city.";
+  if (!normalizeGermanCity(input.city)) errors.city = "Choose a city.";
   if (!isPlayingRole(playingRole)) errors.playingRole = "Choose a playing role.";
   if (!(EXPERIENCE_LEVELS as readonly string[]).includes(experience)) {
     errors.experience = "Choose experience.";

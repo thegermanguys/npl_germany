@@ -239,6 +239,17 @@ section{position:relative;}
 .field label{font-size:12.5px;font-weight:600;color:var(--navy);}
 .field input,.field select{padding:10px 12px;border:1px solid var(--line);border-radius:5px;font-family:'Inter',sans-serif;font-size:14px;background:var(--ivory);color:var(--ink);}
 .field input:focus,.field select:focus{outline:2px solid var(--sky);outline-offset:1px;}
+.city-typeahead{position:relative;}
+.city-suggestions{
+  position:absolute;left:0;right:0;top:100%;z-index:5;margin:2px 0 0;padding:4px 0;
+  list-style:none;background:var(--white);border:1px solid var(--line);border-radius:5px;
+  box-shadow:0 8px 24px rgba(8,24,47,0.12);max-height:220px;overflow:auto;
+}
+.city-suggestions button{
+  display:block;width:100%;text-align:left;border:0;background:transparent;
+  padding:8px 12px;font:inherit;color:var(--ink);cursor:pointer;
+}
+.city-suggestions button.active,.city-suggestions button:hover{background:var(--ivory);}
 .form-msg{margin-top:14px;font-size:13.5px;font-weight:600;padding:10px 12px;border-radius:5px;}
 .form-msg.ok{background:#E6F4EC;color:#1E7A45;}
 .form-msg.err{background:#FBEAEA;color:var(--crimson-dark);}
