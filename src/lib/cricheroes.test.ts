@@ -34,6 +34,16 @@ describe("CricHeroes URL — Awanish sample", () => {
     })}</script>`;
     assert.equal(parseShareTarget(html), SAMPLE_PROFILE_URL);
   });
+
+  it("follows the live gwWBUh share page to the Awanish profile", async () => {
+    const response = await fetch(SAMPLE_SHARE_URL, {
+      headers: { Accept: "text/html", "User-Agent": "NPLGermanyPortal/1.0" },
+      redirect: "follow",
+      signal: AbortSignal.timeout(8000),
+    });
+    assert.equal(response.ok, true);
+    assert.equal(parseShareTarget(await response.text()), SAMPLE_PROFILE_URL);
+  });
 });
 
 describe("parseCricHeroesStats — Awanish card", () => {
