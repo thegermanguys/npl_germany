@@ -28,6 +28,10 @@ npm run dev
 
 `db/schema.sql` is the source of truth. `npm run db:setup` applies it, seeds the
 six franchises, creates Season 1 as deuce ball, and creates the admin user.
+Vercel preview/production builds run the same setup via `vercel-build` when
+`DATABASE_URL` and `AUTH_SECRET` are set on the project. The app reads the
+pooled `DATABASE_URL` at runtime. Setup prefers `DATABASE_URL_UNPOOLED` or
+`DIRECT_URL` when those are present.
 
 ## Roles
 

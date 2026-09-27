@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { emptyStats, resolvePlayerStats } from "@/lib/cricheroes";
 import { DbNotConfiguredError } from "@/lib/db";
 import { createPlayerProfile, createUser, getCurrentSeason, getUserByEmail } from "@/lib/queries";
-import { clearSession, setSession } from "@/lib/session";
+import { clearSession, isAuthConfigured, setSession } from "@/lib/session";
 import { checkboxOn, validateLogin, validateRegistration } from "@/lib/validate";
 
 export type ActionState = {
@@ -30,6 +30,7 @@ export async function registerPlayer(
     cricheroesUrl: String(formData.get("cricheroesUrl") ?? ""),
   });
   if (!parsed.ok) return { fieldErrors: parsed.errors };
+  if (!isAuthConfigured()) return { error: "Could not create your account." };
 
   try {
     const existing = await getUserByEmail(parsed.value.email);
@@ -85,6 +86,8 @@ export async function loginUser(
     password: String(formData.get("password") ?? ""),
   });
   if (!parsed.ok) return { fieldErrors: parsed.errors };
+
+  if (!isAuthConfigured()) return { error: "Email or password is wrong." };
 
   try {
     const user = await getUserByEmail(parsed.value.email);

@@ -11,6 +11,7 @@ export function isDatabaseConfigured(): boolean {
   return Boolean(process.env.DATABASE_URL?.trim());
 }
 
+/** Runtime queries use the pooled Neon URL in DATABASE_URL. */
 export function getSql(): NeonQueryFunction<false, false> {
   const url = process.env.DATABASE_URL?.trim();
   if (!url) throw new DbNotConfiguredError();

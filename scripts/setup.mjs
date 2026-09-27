@@ -5,14 +5,38 @@ import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const url = process.env.DATABASE_URL?.trim();
 
-if (!url) {
-  console.error("DATABASE_URL is not set. Copy .env.example to .env.local and add your Neon URL.");
+function firstUrl(...names) {
+  for (const name of names) {
+    const value = process.env[name]?.trim();
+    if (value) return { name, value };
+  }
+  return null;
+}
+
+function urlKind(raw) {
+  try {
+    const host = new URL(raw).hostname.toLowerCase();
+    return host.includes("pooler") ? "pooled" : "direct";
+  } catch {
+    return "unknown";
+  }
+}
+
+const setupSource =
+  firstUrl("DATABASE_URL_UNPOOLED", "DIRECT_URL", "POSTGRES_URL_NON_POOLING") ??
+  firstUrl("DATABASE_URL");
+
+if (!setupSource) {
+  console.error(
+    "Missing DATABASE_URL (pooled). For DDL you can also set DATABASE_URL_UNPOOLED or DIRECT_URL.",
+  );
   process.exit(1);
 }
 
-const sql = neon(url);
+const kind = urlKind(setupSource.value);
+console.log(`applying schema via ${setupSource.name} (${kind})`);
+const sql = neon(setupSource.value);
 
 function splitSql(source) {
   return source
