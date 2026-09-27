@@ -17,7 +17,10 @@ Season 1 is **deuce ball** only.
 1. Copy `.env.example` to `.env.local`.
 2. Put your Neon connection string in `DATABASE_URL`. Do not commit it.
 3. Set `AUTH_SECRET` to a long random string.
-4. Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` for the first admin account.
+4. Optional: set `ADMIN_PASSWORD` so setup can hash the league admin password.
+   The admin email is always `nplgermany.admin@thegermanguy.org`. If you skip
+   this, insert a bcrypt hash on `users.password_hash` in Neon. Do not commit
+   a password.
 5. Install and apply the schema:
 
 ```bash
@@ -33,13 +36,28 @@ Vercel preview/production builds run the same setup via `vercel-build` when
 need it at runtime). The app reads the pooled `DATABASE_URL`. Setup prefers
 `DATABASE_URL_UNPOOLED` or `DIRECT_URL` when those are present.
 
+This repo is a Next.js app at the project root (`vercel.json` sets the
+framework). In the Vercel project **npl-germany**:
+
+1. Settings → General → Framework Preset → **Next.js**. Leave Output Directory
+   empty. Root Directory must stay empty / `.` (not `public`).
+2. Settings → Domains → assign **nplgermany.thegermanguy.org** to this
+   project’s Production. `npl-germany.vercel.app` should stay on the same
+   project.
+3. Redeploy Production after those settings match. A leftover **Other**
+   framework or Output Directory of `public` / `.` serves no `index.html` and
+   returns Vercel’s platform `4040 NOT_FOUND`.
+4. Optional Production env `ADMIN_PASSWORD` (once) so `vercel-build` can hash
+   the league admin. Do not commit it. If you skip this, set
+   `users.password_hash` in Neon to a bcrypt hash after the admin row exists.
+
 ## Roles
 
 | Role | How the account is created | What they see |
 | --- | --- | --- |
 | Player | Self-register on `/register` or the home form | Own profile, CricHeroes, stats |
 | Franchise owner | Admin creates the account | Eligible (buyable) player list, profiles, stats |
-| Admin | `npm run db:setup` using `ADMIN_*` | Users, eligibility, franchises, season, player records |
+| Admin | Seeded as `nplgermany.admin@thegermanguy.org` | Users, eligibility, franchises, season, player records |
 
 Season 1 eligibility is Nepali + legal status living in Germany. Admin confirms or rejects.
 Only confirmed eligible players are buyable in the auction list.

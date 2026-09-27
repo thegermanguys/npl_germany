@@ -172,18 +172,45 @@ await sql`
 `;
 console.log("ensured Season 1 (deuce ball)");
 
-const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+const LEAGUE_ADMIN_EMAIL = "nplgermany.admin@thegermanguy.org";
+const UNSET_PASSWORD_HASH = "unset";
 const adminPassword = process.env.ADMIN_PASSWORD;
-if (adminEmail && adminPassword) {
-  const hash = bcrypt.hashSync(adminPassword, 10);
+
+const existingAdmin = await sql`
+  SELECT id, password_hash FROM users WHERE email = ${LEAGUE_ADMIN_EMAIL} LIMIT 1
+`;
+const adminRow = existingAdmin[0];
+const hashLooksSet = Boolean(adminRow?.password_hash && String(adminRow.password_hash).startsWith("$2"));
+
+if (!adminRow) {
+  const hash = adminPassword ? bcrypt.hashSync(adminPassword, 10) : UNSET_PASSWORD_HASH;
   await sql`
     INSERT INTO users (email, password_hash, role, display_name)
-    VALUES (${adminEmail}, ${hash}, 'admin', 'League admin')
-    ON CONFLICT (email) DO NOTHING
+    VALUES (${LEAGUE_ADMIN_EMAIL}, ${hash}, 'admin', 'NPL Germany')
   `;
-  console.log(`admin account ready for ${adminEmail}`);
+  console.log(
+    adminPassword
+      ? `admin row created for ${LEAGUE_ADMIN_EMAIL} from ADMIN_PASSWORD`
+      : `admin row created for ${LEAGUE_ADMIN_EMAIL}; set password with ADMIN_PASSWORD or update users.password_hash in Neon`,
+  );
 } else {
-  console.log("skipped admin seed (set ADMIN_EMAIL and ADMIN_PASSWORD to create one)");
+  await sql`
+    UPDATE users SET role = 'admin', display_name = 'NPL Germany'
+    WHERE email = ${LEAGUE_ADMIN_EMAIL}
+  `;
+  if (adminPassword && !hashLooksSet) {
+    const hash = bcrypt.hashSync(adminPassword, 10);
+    await sql`
+      UPDATE users SET password_hash = ${hash} WHERE email = ${LEAGUE_ADMIN_EMAIL}
+    `;
+    console.log(`admin password set from ADMIN_PASSWORD for ${LEAGUE_ADMIN_EMAIL}`);
+  } else if (hashLooksSet) {
+    console.log(`admin row exists for ${LEAGUE_ADMIN_EMAIL}; left password_hash unchanged`);
+  } else {
+    console.log(
+      `admin row exists for ${LEAGUE_ADMIN_EMAIL}; password still unset — set ADMIN_PASSWORD or update users.password_hash in Neon`,
+    );
+  }
 }
 
 console.log("setup complete");
