@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { CricketMarks } from "@/components/CricketIcon";
+import { CricketPitch } from "@/components/CricketPitch";
 import { Nav } from "@/components/Nav";
 import { RegisterForm } from "@/components/RegisterForm";
 import { getSession } from "@/lib/session";
@@ -17,10 +19,14 @@ export default async function RegisterPage() {
     <>
       <Nav user={user} />
       <section className="page-hero">
-        <div className="wrap">
-          <div className="eyebrow">SEASON 1 · DEUCE BALL</div>
-          <h1>Register to play</h1>
-          <p className="lede">Name, contact, eligibility, and your CricHeroes profile.</p>
+        <div className="wrap page-hero-row">
+          <div>
+            <div className="eyebrow">SEASON 1 · DEUCE BALL</div>
+            <h1>Register to play</h1>
+            <p className="lede">Name, contact, eligibility, and your CricHeroes profile.</p>
+            <CricketMarks />
+          </div>
+          <CricketPitch compact />
         </div>
       </section>
       <section className="players-section">

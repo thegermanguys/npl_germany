@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { GALLERY_PHOTOS } from "@/data/photos";
+import { CricketMarks } from "@/components/CricketIcon";
 import { GalleryGrid } from "@/components/GalleryGrid";
 import { Nav } from "@/components/Nav";
 import { getSession } from "@/lib/session";
@@ -17,6 +18,7 @@ export default async function GalleryPage() {
         <div className="wrap">
           <div className="eyebrow">MATCH DAYS</div>
           <h1>Gallery</h1>
+          <CricketMarks />
         </div>
       </section>
       <section className="gallery-section">

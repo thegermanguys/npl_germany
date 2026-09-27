@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { FRANCHISE_COPY } from "@/data/franchises";
+import { CricketIcon, CricketMarks } from "@/components/CricketIcon";
+import { CricketPitch } from "@/components/CricketPitch";
 import { FranchiseIcon } from "@/components/FranchiseIcon";
 import { Nav } from "@/components/Nav";
 import { RegisterForm } from "@/components/RegisterForm";
@@ -39,24 +41,28 @@ export default async function HomePage() {
                 Meet the 6 franchises
               </Link>
             </div>
+            <CricketMarks />
           </div>
-          <div className="hero-badge">
-            <div className="label">SEASON ONE AT A GLANCE</div>
-            <div className="hb-row">
-              <span className="k">Ball</span>
-              <span className="v">{ball}</span>
-            </div>
-            <div className="hb-row">
-              <span className="k">Franchises</span>
-              <span className="v">6</span>
-            </div>
-            <div className="hb-row">
-              <span className="k">Eligibility</span>
-              <span className="v">Nepali citizens, Germany</span>
-            </div>
-            <div className="hb-row">
-              <span className="k">Season</span>
-              <span className="v">{season?.name ?? "Season 1"}</span>
+          <div className="hero-visual">
+            <CricketPitch />
+            <div className="hero-badge">
+              <div className="label">SEASON ONE AT A GLANCE</div>
+              <div className="hb-row">
+                <span className="k">Ball</span>
+                <span className="v">{ball}</span>
+              </div>
+              <div className="hb-row">
+                <span className="k">Franchises</span>
+                <span className="v">6</span>
+              </div>
+              <div className="hb-row">
+                <span className="k">Eligibility</span>
+                <span className="v">Nepali citizens, Germany</span>
+              </div>
+              <div className="hb-row">
+                <span className="k">Season</span>
+                <span className="v">{season?.name ?? "Season 1"}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -79,13 +85,17 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <div className="stat-strip">
+          <div className="stat-strip">
         <div className="wrap">
-          <span>6 FRANCHISES</span>
+          <span>
+            <CricketIcon name="league" /> 6 FRANCHISES
+          </span>
           <span className="dot">·</span>
           <span>100% NEPALI ROSTERS</span>
           <span className="dot">·</span>
-          <span>SEASON ONE — DEUCE BALL</span>
+          <span>
+            <CricketIcon name="ball" /> SEASON ONE — DEUCE BALL
+          </span>
         </div>
       </div>
 
@@ -102,6 +112,7 @@ export default async function HomePage() {
           </div>
           <div className="pillars">
             <div className="pillar">
+              <CricketIcon name="stumps" />
               <div className="num">01 · WHO PLAYS</div>
               <h3>Nepali citizens, only</h3>
               <p>
@@ -111,6 +122,7 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="pillar">
+              <CricketIcon name="ball" />
               <div className="num">02 · HOW WE START</div>
               <h3>Deuce ball, real fixtures</h3>
               <p>
@@ -120,6 +132,7 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="pillar">
+              <CricketIcon name="bat" />
               <div className="num">03 · THE PORTAL</div>
               <h3>Register, then get seen</h3>
               <p>
@@ -134,7 +147,9 @@ export default async function HomePage() {
       <section className="franchises" id="franchises">
         <div className="wrap">
           <div className="sec-head">
-            <div className="sec-eyebrow">SIX CITIES, SIX FRANCHISES</div>
+            <div className="sec-eyebrow">
+              <CricketIcon name="ball" /> SIX CITIES, SIX FRANCHISES
+            </div>
             <h2>The six</h2>
             <p>
               One franchise per city. Names drawn from Nepal&apos;s own symbols — the Gorkha
@@ -159,6 +174,10 @@ export default async function HomePage() {
                     </div>
                   </div>
                   <div className="fr-body">
+                    <div className="fr-kit" aria-hidden="true">
+                      <CricketIcon name="bat" />
+                      <CricketIcon name="stumps" />
+                    </div>
                     <div className="tag">&ldquo;{franchise.tagline}&rdquo;</div>
                     <p>{franchise.description}</p>
                     <Link className="fr-link" href="/players">
@@ -196,12 +215,15 @@ export default async function HomePage() {
       <section className="join" id="join">
         <div className="wrap">
           <div className="sec-head">
-            <div className="sec-eyebrow">PLAYER REGISTRATION</div>
+            <div className="sec-eyebrow">
+              <CricketIcon name="bat" /> PLAYER REGISTRATION
+            </div>
             <h2>Put your name in the auction list</h2>
             <p>Name, contact, eligibility, and your CricHeroes profile. Nothing extra.</p>
           </div>
           <div className="join-grid">
             <div>
+              <CricketPitch compact />
               <ul className="checklist">
                 <li>
                   <span className="tick">
