@@ -28,6 +28,10 @@ const setupSource =
   firstUrl("DATABASE_URL");
 
 if (!setupSource) {
+  if (process.env.VERCEL) {
+    console.log("skipping schema setup (DATABASE_URL not in this Vercel build env)");
+    process.exit(0);
+  }
   console.error(
     "Missing DATABASE_URL (pooled). For DDL you can also set DATABASE_URL_UNPOOLED or DIRECT_URL.",
   );
@@ -37,6 +41,10 @@ if (!setupSource) {
 const kind = urlKind(setupSource.value);
 console.log(`applying schema via ${setupSource.name} (${kind})`);
 const sql = neon(setupSource.value);
+
+function redact(message) {
+  return String(message).replace(/[a-z][a-z0-9+.-]*:\/\/\S+/gi, "[redacted-url]");
+}
 
 function splitSql(source) {
   return source
@@ -119,9 +127,23 @@ const schema = readFileSync(join(root, "db/schema.sql"), "utf8");
 const statements = splitSql(schema);
 
 for (const statement of statements) {
-  await sql.query(statement);
   const preview = statement.replace(/\s+/g, " ").slice(0, 72);
-  console.log(`applied: ${preview}`);
+  try {
+    await sql.query(statement.replace(/;\s*$/, ""));
+    console.log(`applied: ${preview}`);
+  } catch (error) {
+    const message = redact(error instanceof Error ? error.message : error);
+    if (/already exists|duplicate/i.test(message)) {
+      console.log(`exists: ${preview}`);
+      continue;
+    }
+    if (/extension/i.test(preview) && /permission|must be owner|not available/i.test(message)) {
+      console.log(`skipped extension: ${message}`);
+      continue;
+    }
+    console.error(`schema statement failed: ${preview}`);
+    throw new Error(message);
+  }
 }
 
 for (const franchise of franchises) {
