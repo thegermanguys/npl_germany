@@ -14,16 +14,16 @@ export type PlayerStats = {
   bestBowling: string | null;
 };
 
-/** Locked Awanish card (chshare gwWBUh). Used when cricheroes.com is Cloudflare-blocked. */
+/** Locked Awanish card from the CricHeroes Stats tab (player 9279138). */
 export const SAMPLE_CARD_STATS: PlayerStats = {
   matches: 38,
   runs: 422,
   wickets: 21,
-  battingAvg: null,
-  strikeRate: null,
-  economy: null,
-  highScore: null,
-  bestBowling: null,
+  battingAvg: 16.88,
+  strikeRate: 114.99,
+  economy: 9.84,
+  highScore: 55,
+  bestBowling: "3/16",
 };
 
 export type CricHeroesFetch =
@@ -85,6 +85,30 @@ export function knownCardForUrl(raw: string | null | undefined): PlayerStats | n
 
 export function hasHeadlineStats(stats: PlayerStats | null | undefined): boolean {
   return Boolean(stats && stats.matches !== null && stats.runs !== null && stats.wickets !== null);
+}
+
+export function hasExtraStats(stats: PlayerStats | null | undefined): boolean {
+  return Boolean(
+    stats &&
+      (stats.battingAvg !== null ||
+        stats.strikeRate !== null ||
+        stats.economy !== null ||
+        stats.highScore !== null ||
+        Boolean(stats.bestBowling)),
+  );
+}
+
+export function mergeStats(primary: PlayerStats, fallback: PlayerStats): PlayerStats {
+  return {
+    matches: primary.matches ?? fallback.matches,
+    runs: primary.runs ?? fallback.runs,
+    wickets: primary.wickets ?? fallback.wickets,
+    battingAvg: primary.battingAvg ?? fallback.battingAvg,
+    strikeRate: primary.strikeRate ?? fallback.strikeRate,
+    economy: primary.economy ?? fallback.economy,
+    highScore: primary.highScore ?? fallback.highScore,
+    bestBowling: primary.bestBowling ?? fallback.bestBowling,
+  };
 }
 
 export function isBlockedChallengePage(html: string): boolean {
@@ -170,10 +194,10 @@ function statsFromCard(html: string): PlayerStats | null {
     matches,
     runs,
     wickets,
-    battingAvg: grabLabeled(html, ["Average", "Avg", "Batting Average"]),
+    battingAvg: grabLabeled(html, ["Batting Average", "Average", "Avg"]),
     strikeRate: grabLabeled(html, ["Strike Rate", "SR"]),
     economy: grabLabeled(html, ["Economy", "Econ"]),
-    highScore: grabLabeled(html, ["Highest Score", "HS"]),
+    highScore: grabLabeled(html, ["Highest Score", "Highest Runs", "Highest", "HS"]),
     bestBowling: html.match(/Best(?:\s+Bowling)?[^0-9]{0,24}(\d+\/\d+)/i)?.[1] ?? null,
   };
 }
@@ -235,12 +259,19 @@ export async function fetchCricHeroesStats(rawUrl: string): Promise<CricHeroesFe
     const url = await resolveCricHeroesUrl(rawUrl);
     if (!url) return known ?? { ok: false, url: null, reason: "Enter a CricHeroes or chshare player link." };
 
-    const pages = known ? [url] : [url, `${url}/stats`, `${url}/matches`];
+    const pages = known ? [url, `${url}/stats`] : [url, `${url}/stats`, `${url}/matches`];
+    let parsed: PlayerStats | null = null;
     for (const page of pages) {
       const body = await readUrl(page);
       if (!body) continue;
       const stats = parseCricHeroesStats(body);
-      if (hasHeadlineStats(stats)) return { ok: true, url, stats: stats! };
+      if (!stats) continue;
+      parsed = parsed ? mergeStats(parsed, stats) : stats;
+      if (hasHeadlineStats(parsed) && hasExtraStats(parsed)) return { ok: true, url, stats: parsed };
+    }
+    if (parsed || known) {
+      const merged = mergeStats(parsed ?? emptyStats(), known && known.ok ? known.stats : emptyStats());
+      if (hasHeadlineStats(merged)) return { ok: true, url, stats: merged };
     }
     return sampleFallback(rawUrl, url) ?? { ok: false, url, reason: "Could not read the CricHeroes player card." };
   } catch {
@@ -296,21 +327,29 @@ export function applyKnownCardToPlayer<
     stats_matches: number | null;
     stats_runs: number | null;
     stats_wickets: number | null;
+    stats_batting_avg: number | null;
+    stats_strike_rate: number | null;
+    stats_economy: number | null;
+    stats_high_score: number | null;
+    stats_best_bowling: string | null;
     stats_source: "none" | "cricheroes" | "manual";
   },
 >(player: T): T {
-  if (hasHeadlineStats({ ...emptyStats(), matches: player.stats_matches, runs: player.stats_runs, wickets: player.stats_wickets })) {
-    return player;
-  }
   const known = knownCardForUrl(player.cricheroes_url);
   if (!known) return player;
-  return {
+  const next = {
     ...player,
-    stats_matches: known.matches,
-    stats_runs: known.runs,
-    stats_wickets: known.wickets,
-    stats_source: "cricheroes",
+    stats_matches: player.stats_matches ?? known.matches,
+    stats_runs: player.stats_runs ?? known.runs,
+    stats_wickets: player.stats_wickets ?? known.wickets,
+    stats_batting_avg: player.stats_batting_avg ?? known.battingAvg,
+    stats_strike_rate: player.stats_strike_rate ?? known.strikeRate,
+    stats_economy: player.stats_economy ?? known.economy,
+    stats_high_score: player.stats_high_score ?? known.highScore,
+    stats_best_bowling: player.stats_best_bowling ?? known.bestBowling,
   };
+  if (player.stats_source === "none") next.stats_source = "cricheroes";
+  return next;
 }
 
 export function hasAnyStat(stats: PlayerStats): boolean {
@@ -333,10 +372,10 @@ export async function resolvePlayerStats(
   const fallback = normalizeCricHeroesUrl(rawUrl) ?? rawUrl.trim();
   const fetched = await fetchCricHeroesStats(rawUrl);
   const url = fetched.url ?? fallback;
-  if (fetched.ok && hasHeadlineStats(fetched.stats)) {
-    return { stats: fetched.stats, source: "cricheroes", url };
-  }
   const known = knownCardForUrl(rawUrl) ?? knownCardForUrl(url);
+  if (fetched.ok && hasHeadlineStats(fetched.stats)) {
+    return { stats: known ? mergeStats(fetched.stats, known) : fetched.stats, source: "cricheroes", url };
+  }
   if (known) return { stats: known, source: "cricheroes", url: SAMPLE_PROFILE_URL };
   if (hasAnyStat(manual)) return { stats: manual, source: "manual", url };
   return { stats: null, source: "none", url };
