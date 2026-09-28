@@ -20,6 +20,7 @@ export function Footer() {
               <Link href="/#about">About</Link>
               <Link href="/#franchises">Franchises</Link>
               <Link href="/#format">Format</Link>
+              <Link href="/fixtures">Fixtures</Link>
             </div>
             <div className="foot-col">
               <h4>Portal</h4>

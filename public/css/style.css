@@ -571,7 +571,24 @@ tr.not-buyable{opacity:0.55;}
 .elig-badge.auction-in_auction_pool{background:var(--navy);}
 .elig-badge.auction-sold{background:#1E8A72;}
 .elig-badge.auction-rejected,.elig-badge.auction-unsold{background:var(--crimson-dark);}
-@media (max-width:900px){
-  .auction-card,.purse-grid{grid-template-columns:1fr;}
-  .auction-card{flex-direction:column;align-items:flex-start;}
+.muted-hero{color:rgba(255,255,255,0.45);}
+.fixture-day{margin:32px 0;}
+.fixture-day h2{
+  font-family:'Inter',sans-serif;font-size:18px;font-weight:700;
+  text-transform:none;letter-spacing:0;color:var(--navy);margin-bottom:14px;
+}
+.fixture-list{display:flex;flex-direction:column;gap:10px;}
+.fixture-row{
+  display:flex;justify-content:space-between;align-items:center;gap:18px;
+  background:var(--white);border:1px solid var(--line);border-radius:10px;
+  padding:18px 22px;
+}
+.fixture-teams{display:flex;align-items:baseline;gap:10px;font-weight:700;color:var(--navy);font-size:18px;}
+.fixture-meta{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:13.5px;color:var(--navy);}
+.elig-badge.fixture-scheduled{background:var(--navy);}
+.elig-badge.fixture-live{background:var(--crimson);}
+.elig-badge.fixture-completed{background:#1E8A72;}
+.elig-badge.fixture-abandoned{background:var(--crimson-dark);}
+@media (max-width:700px){
+  .fixture-row{flex-direction:column;align-items:flex-start;}
 }

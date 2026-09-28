@@ -5,6 +5,8 @@ import { asMediaBuffer, bytesForDatabase, isDocumentSlot, type DocumentSlot, typ
 import type {
   AuctionStatus,
   EligibilityStatus,
+  FixtureRow,
+  FixtureStatus,
   FranchiseRow,
   PlayerListItem,
   PlayerProfileRow,
@@ -14,6 +16,11 @@ import type {
   StatsSource,
   UserRow,
 } from "./types";
+
+function asIso(value: unknown): string {
+  if (value instanceof Date) return value.toISOString();
+  return String(value ?? "");
+}
 
 function asNumber(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
@@ -880,4 +887,111 @@ export async function setLeagueLogo(mediaId: string): Promise<void> {
     ON CONFLICT (id) DO UPDATE SET logo_id = EXCLUDED.logo_id
   `;
   if (previous && previous !== mediaId) await deleteMedia(previous);
+}
+
+function mapFixture(row: Record<string, unknown>): FixtureRow {
+  return {
+    id: String(row.id),
+    season: String(row.season ?? "Season 1"),
+    franchise_a_id: String(row.franchise_a_id),
+    franchise_b_id: String(row.franchise_b_id),
+    ground_name: String(row.ground_name),
+    city: String(row.city),
+    scheduled_at: asIso(row.scheduled_at),
+    status: (row.status as FixtureStatus) ?? "scheduled",
+    result_summary: (row.result_summary as string | null) ?? null,
+    winner_franchise_id: row.winner_franchise_id ? String(row.winner_franchise_id) : null,
+    created_at: String(row.created_at ?? ""),
+    updated_at: String(row.updated_at ?? ""),
+    a_name: String(row.a_name ?? ""),
+    a_short: String(row.a_short ?? ""),
+    a_city: String(row.a_city ?? ""),
+    a_color: String(row.a_color ?? ""),
+    b_name: String(row.b_name ?? ""),
+    b_short: String(row.b_short ?? ""),
+    b_city: String(row.b_city ?? ""),
+    b_color: String(row.b_color ?? ""),
+    winner_name: row.winner_name ? String(row.winner_name) : null,
+  };
+}
+
+export async function listFixtures(season = "Season 1"): Promise<FixtureRow[]> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT fx.id, fx.season, fx.franchise_a_id, fx.franchise_b_id, fx.ground_name, fx.city,
+           fx.scheduled_at::text, fx.status, fx.result_summary, fx.winner_franchise_id,
+           fx.created_at::text, fx.updated_at::text,
+           a.full_name AS a_name, a.name AS a_short, a.city AS a_city, a.color_key AS a_color,
+           b.full_name AS b_name, b.name AS b_short, b.city AS b_city, b.color_key AS b_color,
+           w.full_name AS winner_name
+    FROM fixtures fx
+    JOIN franchises a ON a.id = fx.franchise_a_id
+    JOIN franchises b ON b.id = fx.franchise_b_id
+    LEFT JOIN franchises w ON w.id = fx.winner_franchise_id
+    WHERE fx.season = ${season}
+    ORDER BY fx.scheduled_at, fx.id
+  `;
+  return rows.map((row) => mapFixture(row as Record<string, unknown>));
+}
+
+export async function getFixture(id: string): Promise<FixtureRow | null> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT fx.id, fx.season, fx.franchise_a_id, fx.franchise_b_id, fx.ground_name, fx.city,
+           fx.scheduled_at::text, fx.status, fx.result_summary, fx.winner_franchise_id,
+           fx.created_at::text, fx.updated_at::text,
+           a.full_name AS a_name, a.name AS a_short, a.city AS a_city, a.color_key AS a_color,
+           b.full_name AS b_name, b.name AS b_short, b.city AS b_city, b.color_key AS b_color,
+           w.full_name AS winner_name
+    FROM fixtures fx
+    JOIN franchises a ON a.id = fx.franchise_a_id
+    JOIN franchises b ON b.id = fx.franchise_b_id
+    LEFT JOIN franchises w ON w.id = fx.winner_franchise_id
+    WHERE fx.id = ${id}
+    LIMIT 1
+  `;
+  return rows[0] ? mapFixture(rows[0] as Record<string, unknown>) : null;
+}
+
+export type FixtureWriteInput = {
+  season: string;
+  franchiseAId: string;
+  franchiseBId: string;
+  groundName: string;
+  city: string;
+  scheduledAt: Date;
+  status: FixtureStatus;
+};
+
+export async function createFixture(input: FixtureWriteInput): Promise<string> {
+  const sql = getSql();
+  const rows = await sql`
+    INSERT INTO fixtures (
+      season, franchise_a_id, franchise_b_id, ground_name, city, scheduled_at, status
+    )
+    VALUES (
+      ${input.season}, ${input.franchiseAId}, ${input.franchiseBId},
+      ${input.groundName}, ${input.city}, ${input.scheduledAt.toISOString()}, ${input.status}
+    )
+    RETURNING id
+  `;
+  return String((rows[0] as { id: string }).id);
+}
+
+export async function updateFixture(id: string, input: FixtureWriteInput): Promise<boolean> {
+  const sql = getSql();
+  const rows = await sql`
+    UPDATE fixtures
+    SET season = ${input.season},
+        franchise_a_id = ${input.franchiseAId},
+        franchise_b_id = ${input.franchiseBId},
+        ground_name = ${input.groundName},
+        city = ${input.city},
+        scheduled_at = ${input.scheduledAt.toISOString()},
+        status = ${input.status},
+        updated_at = now()
+    WHERE id = ${id}
+    RETURNING id
+  `;
+  return rows.length > 0;
 }

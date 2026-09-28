@@ -129,4 +129,33 @@ export type PlayerListItem = PlayerProfileRow & {
   franchise_color: string | null;
 };
 
+export const FIXTURE_STATUSES = ["scheduled", "live", "completed", "abandoned"] as const;
+export type FixtureStatus = (typeof FIXTURE_STATUSES)[number];
+
+export const DEFAULT_FIXTURE_SEASON = "Season 1";
+
+export type FixtureRow = {
+  id: string;
+  season: string;
+  franchise_a_id: string;
+  franchise_b_id: string;
+  ground_name: string;
+  city: string;
+  scheduled_at: string;
+  status: FixtureStatus;
+  result_summary: string | null;
+  winner_franchise_id: string | null;
+  created_at: string;
+  updated_at: string;
+  a_name: string;
+  a_short: string;
+  a_city: string;
+  a_color: string;
+  b_name: string;
+  b_short: string;
+  b_city: string;
+  b_color: string;
+  winner_name: string | null;
+};
+
 export type FieldErrors = Record<string, string>;

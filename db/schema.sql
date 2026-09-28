@@ -184,3 +184,24 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 
 CREATE INDEX IF NOT EXISTS password_reset_tokens_user_idx ON password_reset_tokens (user_id);
 CREATE INDEX IF NOT EXISTS password_reset_tokens_hash_idx ON password_reset_tokens (token_hash);
+
+CREATE TABLE IF NOT EXISTS fixtures (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  season text NOT NULL DEFAULT 'Season 1',
+  franchise_a_id uuid NOT NULL REFERENCES franchises(id),
+  franchise_b_id uuid NOT NULL REFERENCES franchises(id),
+  ground_name text NOT NULL,
+  city text NOT NULL,
+  scheduled_at timestamptz NOT NULL,
+  status text NOT NULL DEFAULT 'scheduled'
+    CHECK (status IN ('scheduled', 'live', 'completed', 'abandoned')),
+  result_summary text,
+  winner_franchise_id uuid REFERENCES franchises(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CHECK (franchise_a_id <> franchise_b_id)
+);
+
+CREATE INDEX IF NOT EXISTS fixtures_scheduled_idx ON fixtures (scheduled_at);
+CREATE INDEX IF NOT EXISTS fixtures_season_idx ON fixtures (season);
+CREATE INDEX IF NOT EXISTS fixtures_status_idx ON fixtures (status);

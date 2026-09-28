@@ -8,7 +8,7 @@ export async function Nav({
   active,
 }: {
   user: SessionUser | null;
-  active?: "players" | "gallery" | "admin" | "account" | "auction";
+  active?: "players" | "gallery" | "admin" | "account" | "auction" | "fixtures";
 }) {
   const ctaHref = user ? (user.role === "admin" ? "/admin" : user.role === "franchise_owner" ? "/players" : "/account") : "/register";
   const ctaLabel = user ? user.displayName : "Register to play";
@@ -32,6 +32,9 @@ export async function Nav({
           </Link>
           <Link href="/auction" className={active === "auction" ? "active" : undefined}>
             Auction
+          </Link>
+          <Link href="/fixtures" className={active === "fixtures" ? "active" : undefined}>
+            Fixtures
           </Link>
           <Link href="/gallery" className={active === "gallery" ? "active" : undefined}>
             Gallery
