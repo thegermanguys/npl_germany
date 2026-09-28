@@ -529,3 +529,43 @@ tr.not-buyable{opacity:0.55;}
   .hero-visual{align-items:flex-start;}
   .page-hero-row{flex-direction:column;align-items:flex-start;}
 }
+
+.badge-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.auction-room .form-msg{margin-bottom:16px;}
+.auction-card{
+  display:flex;gap:28px;align-items:center;
+  background:var(--white);border:1px solid var(--line);border-radius:10px;
+  padding:28px;margin-bottom:24px;
+}
+.auction-card h2{font-size:clamp(28px,4vw,42px);color:var(--navy);margin:6px 0 8px;}
+.auction-card .lede{margin:0 0 6px;color:var(--navy);}
+.auction-base{font-weight:700;color:var(--navy);margin:12px 0 8px;}
+.auction-board .table-wrap{margin-top:28px;}
+.inline-price{display:flex;align-items:center;gap:4px;font-weight:600;color:var(--navy);}
+.inline-price input{
+  width:88px;padding:6px 8px;border:1px solid var(--line);border-radius:5px;font:inherit;
+}
+.table-actions{margin:16px 0 28px;}
+.purse-meter{margin-top:12px;}
+.purse-row{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted);}
+.purse-row strong{color:var(--navy);}
+.purse-bar{height:6px;background:var(--line);border-radius:99px;margin-top:8px;overflow:hidden;}
+.purse-bar span{display:block;height:100%;background:var(--navy);border-radius:99px;}
+.purse-bar span.over{background:var(--crimson);}
+.purse-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px;}
+.squad-group{margin:32px 0;}
+.squad-group h2{font-size:22px;color:var(--navy);margin-bottom:16px;}
+.fr-page-icon{
+  width:128px;height:128px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.fr-page-icon .icon{width:64px;height:64px;}
+.elig-badge.auction-pending_review{background:#C4841D;}
+.elig-badge.auction-approved{background:#2E86D6;}
+.elig-badge.auction-in_auction_pool{background:var(--navy);}
+.elig-badge.auction-sold{background:#1E8A72;}
+.elig-badge.auction-rejected,.elig-badge.auction-unsold{background:var(--crimson-dark);}
+@media (max-width:900px){
+  .auction-card,.purse-grid{grid-template-columns:1fr;}
+  .auction-card{flex-direction:column;align-items:flex-start;}
+}

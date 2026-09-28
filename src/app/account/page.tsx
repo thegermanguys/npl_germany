@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { uploadOwnDocument, uploadOwnPhoto } from "@/app/actions/media";
 import { updateOwnProfile } from "@/app/actions/players";
+import { AuctionStatusBadge } from "@/components/AuctionStatusBadge";
 import { DocumentSlots } from "@/components/DocumentSlots";
 import { EligibilityBadge } from "@/components/EligibilityBadge";
 import { Nav } from "@/components/Nav";
@@ -50,7 +51,14 @@ export default async function AccountPage() {
       <section className="page-hero">
         <div className="wrap">
           <div className="eyebrow">YOUR PROFILE</div>
-          {profile ? <EligibilityBadge player={profile} /> : <h1>{user.displayName}</h1>}
+          {profile ? (
+            <div className="badge-row">
+              <EligibilityBadge player={profile} />
+              <AuctionStatusBadge status={profile.auction_status} />
+            </div>
+          ) : (
+            <h1>{user.displayName}</h1>
+          )}
         </div>
       </section>
       <section className="players-section">

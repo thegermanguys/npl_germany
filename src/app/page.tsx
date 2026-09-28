@@ -181,8 +181,8 @@ export default async function HomePage() {
                   </div>
                   <div className="tag">&ldquo;{franchise.tagline}&rdquo;</div>
                   <p>{franchise.description}</p>
-                  <Link className="fr-link" href="/players">
-                    View players →
+                  <Link className="fr-link" href={`/franchises/${franchise.city.toLowerCase()}`}>
+                    View squad →
                   </Link>
                 </div>
               </div>

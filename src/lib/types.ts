@@ -19,6 +19,16 @@ export type SeasonStatus = (typeof SEASON_STATUSES)[number];
 export const ELIGIBILITY_STATUSES = ["pending", "confirmed", "rejected"] as const;
 export type EligibilityStatus = (typeof ELIGIBILITY_STATUSES)[number];
 
+export const AUCTION_STATUSES = [
+  "pending_review",
+  "approved",
+  "rejected",
+  "in_auction_pool",
+  "sold",
+  "unsold",
+] as const;
+export type AuctionStatus = (typeof AUCTION_STATUSES)[number];
+
 export const STATS_SOURCES = ["none", "cricheroes", "manual"] as const;
 export type StatsSource = (typeof STATS_SOURCES)[number];
 
@@ -61,7 +71,10 @@ export type FranchiseRow = {
   sort_order: number;
   logo_id: string | null;
   owner_user_id: string | null;
+  purse_total: number;
+  purse_spent: number;
   created_at: string;
+  owner_name?: string | null;
 };
 
 export type SeasonRow = {
@@ -101,6 +114,11 @@ export type PlayerProfileRow = {
   stats_best_bowling: string | null;
   stats_fetched_at: string | null;
   photo_id: string | null;
+  auction_status: AuctionStatus;
+  base_price: number | null;
+  sold_to_franchise_id: string | null;
+  sold_price: number | null;
+  auction_order: number | null;
   created_at: string;
   updated_at: string;
 };

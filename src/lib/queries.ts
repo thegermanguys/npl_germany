@@ -1,7 +1,9 @@
+import { DEFAULT_PURSE_TOTAL, purseWouldExceed } from "./auction";
 import { applyKnownCardToPlayer, type PlayerStats } from "./cricheroes";
 import { getSql } from "./db";
 import { asMediaBuffer, bytesForDatabase, isDocumentSlot, type DocumentSlot, type MediaKind } from "./media";
 import type {
+  AuctionStatus,
   EligibilityStatus,
   FranchiseRow,
   PlayerListItem,
@@ -52,6 +54,11 @@ function mapPlayer(row: Record<string, unknown>): PlayerListItem {
     stats_best_bowling: (row.stats_best_bowling as string | null) ?? null,
     stats_fetched_at: (row.stats_fetched_at as string | null) ?? null,
     photo_id: (row.photo_id as string | null) ?? null,
+    auction_status: (row.auction_status as AuctionStatus) ?? "pending_review",
+    base_price: asNumber(row.base_price),
+    sold_to_franchise_id: (row.sold_to_franchise_id as string | null) ?? null,
+    sold_price: asNumber(row.sold_price),
+    auction_order: asNumber(row.auction_order),
     created_at: String(row.created_at ?? ""),
     updated_at: String(row.updated_at ?? ""),
     email: String(row.email ?? ""),
@@ -217,7 +224,10 @@ function mapFranchise(row: Record<string, unknown>): FranchiseRow {
     sort_order: Number(row.sort_order ?? 0),
     logo_id: row.logo_id ? String(row.logo_id) : null,
     owner_user_id: row.owner_user_id ? String(row.owner_user_id) : null,
+    purse_total: asNumber(row.purse_total) ?? DEFAULT_PURSE_TOTAL,
+    purse_spent: asNumber(row.purse_spent) ?? 0,
     created_at: String(row.created_at ?? ""),
+    owner_name: row.owner_name ? String(row.owner_name) : null,
   };
 }
 
@@ -225,7 +235,7 @@ export async function listFranchises(): Promise<FranchiseRow[]> {
   const sql = getSql();
   const rows = await sql`
     SELECT id, slug, city, name, full_name, tagline, description, color_key, sort_order,
-           logo_id, owner_user_id, created_at::text
+           logo_id, owner_user_id, purse_total, purse_spent, created_at::text
     FROM franchises
     ORDER BY sort_order, city
   `;
@@ -236,7 +246,7 @@ export async function getFranchise(id: string): Promise<FranchiseRow | null> {
   const sql = getSql();
   const rows = await sql`
     SELECT id, slug, city, name, full_name, tagline, description, color_key, sort_order,
-           logo_id, owner_user_id, created_at::text
+           logo_id, owner_user_id, purse_total, purse_spent, created_at::text
     FROM franchises
     WHERE id = ${id}
     LIMIT 1
@@ -246,12 +256,14 @@ export async function getFranchise(id: string): Promise<FranchiseRow | null> {
 
 export async function updateFranchise(
   id: string,
-  input: { tagline: string; description: string },
+  input: { tagline: string; description: string; purseTotal: number },
 ): Promise<void> {
   const sql = getSql();
   await sql`
     UPDATE franchises
-    SET tagline = ${input.tagline}, description = ${input.description}
+    SET tagline = ${input.tagline},
+        description = ${input.description},
+        purse_total = ${input.purseTotal}
     WHERE id = ${id}
   `;
 }
@@ -328,10 +340,11 @@ export async function getProfileByUserId(userId: string): Promise<PlayerListItem
            p.stats_matches, p.stats_runs, p.stats_wickets, p.stats_batting_avg,
            p.stats_strike_rate, p.stats_economy, p.stats_high_score, p.stats_best_bowling,
            p.stats_fetched_at::text, p.photo_id, p.created_at::text, p.updated_at::text,
+           p.auction_status, p.base_price, p.sold_to_franchise_id, p.sold_price, p.auction_order,
            u.email, f.full_name AS franchise_name, f.color_key AS franchise_color
     FROM player_profiles p
     JOIN users u ON u.id = p.user_id
-    LEFT JOIN franchises f ON f.id = p.franchise_id
+    LEFT JOIN franchises f ON f.id = COALESCE(p.sold_to_franchise_id, p.franchise_id)
     WHERE p.user_id = ${userId}
     LIMIT 1
   `;
@@ -348,10 +361,11 @@ export async function getProfileById(id: string): Promise<PlayerListItem | null>
            p.stats_matches, p.stats_runs, p.stats_wickets, p.stats_batting_avg,
            p.stats_strike_rate, p.stats_economy, p.stats_high_score, p.stats_best_bowling,
            p.stats_fetched_at::text, p.photo_id, p.created_at::text, p.updated_at::text,
+           p.auction_status, p.base_price, p.sold_to_franchise_id, p.sold_price, p.auction_order,
            u.email, f.full_name AS franchise_name, f.color_key AS franchise_color
     FROM player_profiles p
     JOIN users u ON u.id = p.user_id
-    LEFT JOIN franchises f ON f.id = p.franchise_id
+    LEFT JOIN franchises f ON f.id = COALESCE(p.sold_to_franchise_id, p.franchise_id)
     WHERE p.id = ${id}
     LIMIT 1
   `;
@@ -368,10 +382,11 @@ export async function listPlayers(seasonId: string): Promise<PlayerListItem[]> {
            p.stats_matches, p.stats_runs, p.stats_wickets, p.stats_batting_avg,
            p.stats_strike_rate, p.stats_economy, p.stats_high_score, p.stats_best_bowling,
            p.stats_fetched_at::text, p.photo_id, p.created_at::text, p.updated_at::text,
+           p.auction_status, p.base_price, p.sold_to_franchise_id, p.sold_price, p.auction_order,
            u.email, f.full_name AS franchise_name, f.color_key AS franchise_color
     FROM player_profiles p
     JOIN users u ON u.id = p.user_id
-    LEFT JOIN franchises f ON f.id = p.franchise_id
+    LEFT JOIN franchises f ON f.id = COALESCE(p.sold_to_franchise_id, p.franchise_id)
     WHERE p.season_id = ${seasonId}
     ORDER BY p.full_name
   `;
@@ -575,6 +590,276 @@ export async function setFranchiseLogo(franchiseId: string, mediaId: string): Pr
   const previous = (rows[0] as { logo_id: string | null } | undefined)?.logo_id ?? null;
   await sql`UPDATE franchises SET logo_id = ${mediaId} WHERE id = ${franchiseId}`;
   if (previous && previous !== mediaId) await deleteMedia(previous);
+}
+
+export async function getFranchiseByCity(city: string): Promise<FranchiseRow | null> {
+  const sql = getSql();
+  const key = city.trim().toLowerCase();
+  const rows = await sql`
+    SELECT f.id, f.slug, f.city, f.name, f.full_name, f.tagline, f.description, f.color_key,
+           f.sort_order, f.logo_id, f.owner_user_id, f.purse_total, f.purse_spent,
+           f.created_at::text, u.display_name AS owner_name
+    FROM franchises f
+    LEFT JOIN users u ON u.id = f.owner_user_id
+    WHERE lower(f.city) = ${key}
+    LIMIT 1
+  `;
+  return rows[0] ? mapFranchise(rows[0] as Record<string, unknown>) : null;
+}
+
+export async function listSquad(franchiseId: string): Promise<PlayerListItem[]> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT p.id, p.user_id, p.season_id, p.full_name, p.phone, p.city, p.playing_role,
+           p.experience, p.batting_hand, p.bowling_style, p.franchise_id,
+           p.nepali_citizen, p.germany_legal_resident, p.eligibility_status,
+           p.eligibility_reviewed_at::text, p.cricheroes_url, p.stats_source,
+           p.stats_matches, p.stats_runs, p.stats_wickets, p.stats_batting_avg,
+           p.stats_strike_rate, p.stats_economy, p.stats_high_score, p.stats_best_bowling,
+           p.stats_fetched_at::text, p.photo_id, p.created_at::text, p.updated_at::text,
+           p.auction_status, p.base_price, p.sold_to_franchise_id, p.sold_price, p.auction_order,
+           u.email, f.full_name AS franchise_name, f.color_key AS franchise_color
+    FROM player_profiles p
+    JOIN users u ON u.id = p.user_id
+    LEFT JOIN franchises f ON f.id = COALESCE(p.sold_to_franchise_id, p.franchise_id)
+    WHERE p.sold_to_franchise_id = ${franchiseId} AND p.auction_status = 'sold'
+    ORDER BY p.playing_role, p.full_name
+  `;
+  return rows.map((row) => mapPlayer(row as Record<string, unknown>));
+}
+
+export async function listAuctionPool(): Promise<PlayerListItem[]> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT p.id, p.user_id, p.season_id, p.full_name, p.phone, p.city, p.playing_role,
+           p.experience, p.batting_hand, p.bowling_style, p.franchise_id,
+           p.nepali_citizen, p.germany_legal_resident, p.eligibility_status,
+           p.eligibility_reviewed_at::text, p.cricheroes_url, p.stats_source,
+           p.stats_matches, p.stats_runs, p.stats_wickets, p.stats_batting_avg,
+           p.stats_strike_rate, p.stats_economy, p.stats_high_score, p.stats_best_bowling,
+           p.stats_fetched_at::text, p.photo_id, p.created_at::text, p.updated_at::text,
+           p.auction_status, p.base_price, p.sold_to_franchise_id, p.sold_price, p.auction_order,
+           u.email, f.full_name AS franchise_name, f.color_key AS franchise_color
+    FROM player_profiles p
+    JOIN users u ON u.id = p.user_id
+    LEFT JOIN franchises f ON f.id = COALESCE(p.sold_to_franchise_id, p.franchise_id)
+    WHERE p.auction_status = 'in_auction_pool'
+    ORDER BY p.auction_order NULLS LAST, p.created_at, p.id
+  `;
+  return rows.map((row) => mapPlayer(row as Record<string, unknown>));
+}
+
+export async function listRecentSales(limit = 8): Promise<PlayerListItem[]> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT p.id, p.user_id, p.season_id, p.full_name, p.phone, p.city, p.playing_role,
+           p.experience, p.batting_hand, p.bowling_style, p.franchise_id,
+           p.nepali_citizen, p.germany_legal_resident, p.eligibility_status,
+           p.eligibility_reviewed_at::text, p.cricheroes_url, p.stats_source,
+           p.stats_matches, p.stats_runs, p.stats_wickets, p.stats_batting_avg,
+           p.stats_strike_rate, p.stats_economy, p.stats_high_score, p.stats_best_bowling,
+           p.stats_fetched_at::text, p.photo_id, p.created_at::text, p.updated_at::text,
+           p.auction_status, p.base_price, p.sold_to_franchise_id, p.sold_price, p.auction_order,
+           u.email, f.full_name AS franchise_name, f.color_key AS franchise_color
+    FROM player_profiles p
+    JOIN users u ON u.id = p.user_id
+    LEFT JOIN franchises f ON f.id = COALESCE(p.sold_to_franchise_id, p.franchise_id)
+    WHERE p.auction_status = 'sold'
+    ORDER BY p.updated_at DESC
+    LIMIT ${limit}
+  `;
+  return rows.map((row) => mapPlayer(row as Record<string, unknown>));
+}
+
+export type AuctionState = {
+  currentPlayerId: string | null;
+  closed: boolean;
+};
+
+export async function getAuctionState(): Promise<AuctionState> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT auction_player_id, auction_closed
+    FROM league_settings
+    WHERE id = 'npl_germany'
+    LIMIT 1
+  `;
+  const row = rows[0] as { auction_player_id: string | null; auction_closed: unknown } | undefined;
+  return {
+    currentPlayerId: row?.auction_player_id ? String(row.auction_player_id) : null,
+    closed: row?.auction_closed === true || row?.auction_closed === "t" || row?.auction_closed === "true",
+  };
+}
+
+export async function setAuctionPlayer(playerId: string | null): Promise<void> {
+  const sql = getSql();
+  await sql`
+    INSERT INTO league_settings (id, auction_player_id)
+    VALUES ('npl_germany', ${playerId})
+    ON CONFLICT (id) DO UPDATE SET auction_player_id = EXCLUDED.auction_player_id
+  `;
+}
+
+export async function setAuctionClosed(closed: boolean): Promise<void> {
+  const sql = getSql();
+  await sql`
+    INSERT INTO league_settings (id, auction_closed)
+    VALUES ('npl_germany', ${closed})
+    ON CONFLICT (id) DO UPDATE SET auction_closed = EXCLUDED.auction_closed
+  `;
+}
+
+export async function approvePlayers(ids: string[]): Promise<number> {
+  if (ids.length === 0) return 0;
+  const sql = getSql();
+  let n = 0;
+  for (const id of ids) {
+    const rows = await sql`
+      UPDATE player_profiles
+      SET auction_status = 'approved', updated_at = now()
+      WHERE id = ${id} AND auction_status = 'pending_review'
+      RETURNING id
+    `;
+    n += rows.length;
+  }
+  return n;
+}
+
+export async function setBasePrice(id: string, price: number): Promise<void> {
+  const sql = getSql();
+  await sql`
+    UPDATE player_profiles
+    SET base_price = ${price}, updated_at = now()
+    WHERE id = ${id}
+  `;
+}
+
+export async function moveToAuctionPool(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT auction_status, base_price FROM player_profiles WHERE id = ${id} LIMIT 1
+  `;
+  const row = rows[0] as { auction_status: string; base_price: number | null } | undefined;
+  if (!row) return { ok: false, error: "Player not found." };
+  if (row.auction_status !== "approved" && row.auction_status !== "in_auction_pool") {
+    return { ok: false, error: "Approve the player before adding them to the pool." };
+  }
+  const price = asNumber(row.base_price);
+  if (price === null || price < 0) return { ok: false, error: "Set a base price first." };
+  const maxRows = await sql`
+    SELECT COALESCE(MAX(auction_order), 0)::int AS n FROM player_profiles
+  `;
+  const nextOrder = Number((maxRows[0] as { n: number } | undefined)?.n ?? 0) + 1;
+  await sql`
+    UPDATE player_profiles
+    SET auction_status = 'in_auction_pool',
+        auction_order = COALESCE(auction_order, ${nextOrder}),
+        updated_at = now()
+    WHERE id = ${id}
+  `;
+  return { ok: true };
+}
+
+export async function sellCurrentPlayer(input: {
+  playerId: string;
+  franchiseId: string;
+  price: number;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const sql = getSql();
+  const state = await getAuctionState();
+  if (state.closed) return { ok: false, error: "The auction is closed." };
+  if (state.currentPlayerId !== input.playerId) {
+    return { ok: false, error: "This is not the player on the block." };
+  }
+  const player = await getProfileById(input.playerId);
+  if (!player || player.auction_status !== "in_auction_pool") {
+    return { ok: false, error: "That player is not in the pool." };
+  }
+  const franchise = await getFranchise(input.franchiseId);
+  if (!franchise) return { ok: false, error: "Choose a franchise." };
+  if (purseWouldExceed(franchise.purse_total, franchise.purse_spent, input.price)) {
+    return {
+      ok: false,
+      error: `This sale would take ${franchise.full_name} over the purse cap.`,
+    };
+  }
+  await sql`
+    UPDATE player_profiles
+    SET auction_status = 'sold',
+        sold_to_franchise_id = ${input.franchiseId},
+        sold_price = ${input.price},
+        franchise_id = ${input.franchiseId},
+        updated_at = now()
+    WHERE id = ${input.playerId}
+  `;
+  await sql`
+    UPDATE franchises
+    SET purse_spent = purse_spent + ${input.price}
+    WHERE id = ${input.franchiseId}
+  `;
+  return { ok: true };
+}
+
+export async function markCurrentUnsold(playerId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const sql = getSql();
+  const state = await getAuctionState();
+  if (state.closed) return { ok: false, error: "The auction is closed." };
+  if (state.currentPlayerId !== playerId) {
+    return { ok: false, error: "This is not the player on the block." };
+  }
+  const rows = await sql`
+    UPDATE player_profiles
+    SET auction_status = 'unsold', updated_at = now()
+    WHERE id = ${playerId} AND auction_status = 'in_auction_pool'
+    RETURNING id
+  `;
+  if (!rows[0]) return { ok: false, error: "That player is not in the pool." };
+  return { ok: true };
+}
+
+export async function closeAuctionPool(): Promise<number> {
+  const sql = getSql();
+  const rows = await sql`
+    UPDATE player_profiles
+    SET auction_status = 'unsold', updated_at = now()
+    WHERE auction_status = 'in_auction_pool'
+    RETURNING id
+  `;
+  await setAuctionClosed(true);
+  await setAuctionPlayer(null);
+  return rows.length;
+}
+
+export async function countAuctionByStatus(): Promise<Record<AuctionStatus, number>> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT auction_status AS status, count(*)::int AS n FROM player_profiles GROUP BY auction_status
+  `;
+  const counts: Record<AuctionStatus, number> = {
+    pending_review: 0,
+    approved: 0,
+    rejected: 0,
+    in_auction_pool: 0,
+    sold: 0,
+    unsold: 0,
+  };
+  for (const row of rows as Array<{ status: AuctionStatus; n: number }>) {
+    if (row.status in counts) counts[row.status] = row.n;
+  }
+  return counts;
+}
+
+export async function ensureCurrentAuctionPlayer(): Promise<string | null> {
+  const state = await getAuctionState();
+  if (state.closed) return state.currentPlayerId;
+  if (state.currentPlayerId) {
+    const current = await getProfileById(state.currentPlayerId);
+    if (current) return current.id;
+  }
+  const pool = await listAuctionPool();
+  const first = pool[0]?.id ?? null;
+  await setAuctionPlayer(first);
+  return first;
 }
 
 export async function getLeagueLogoId(): Promise<string | null> {

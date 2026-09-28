@@ -10,6 +10,7 @@ import {
   createUser,
   getCurrentSeason,
   getProfileById,
+  getFranchise,
   getUserByEmail,
   getUserById,
   invalidateUserResetTokens,
@@ -158,10 +159,14 @@ export async function adminUpdateFranchise(
   const id = String(formData.get("franchiseId") ?? "");
   const tagline = String(formData.get("tagline") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
+  const purseTotal = Number(formData.get("purseTotal"));
   if (!id || !tagline || !description) return { error: "Tagline and description are required." };
+  if (!Number.isInteger(purseTotal) || purseTotal < 0) return { error: "Purse cap must be a whole euro amount." };
 
   try {
-    await updateFranchise(id, { tagline, description });
+    const franchise = await getFranchise(id);
+    await updateFranchise(id, { tagline, description, purseTotal });
+    if (franchise) revalidatePath(`/franchises/${franchise.city.toLowerCase()}`);
   } catch (error) {
     if (error instanceof DbNotConfiguredError) {
       return { error: "The league database is not connected yet." };
@@ -171,6 +176,7 @@ export async function adminUpdateFranchise(
 
   revalidatePath("/");
   revalidatePath("/admin/franchises");
+  revalidatePath("/franchises");
   return {};
 }
 

@@ -25,6 +25,7 @@ export function Footer() {
               <h4>Portal</h4>
               <Link href="/register">Register to play</Link>
               <Link href="/players">Players</Link>
+              <Link href="/auction">Auction</Link>
               <Link href="/login">Sign in</Link>
             </div>
             <div className="foot-col">

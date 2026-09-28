@@ -72,6 +72,8 @@ export default async function AdminPage() {
           </div>
           <div className="admin-nav">
             <Link href="/admin/users">Users</Link>
+            <Link href="/admin/players">Auction pool</Link>
+            <Link href="/admin/auction">Auction room</Link>
             <Link href="/admin/franchises">Franchises</Link>
             <Link href="/admin/season">Season</Link>
             <Link href="/players">Player list</Link>
