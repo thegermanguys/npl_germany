@@ -1,3 +1,5 @@
+import { LEAGUE_LOGO_SRC } from "@/lib/brand";
+
 export type CricketMark = "bat" | "ball" | "stumps" | "league";
 
 export function CricketIcon({
@@ -44,22 +46,7 @@ export function CricketIcon({
       </svg>
     );
   }
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" fill="currentColor" />
-      <path
-        d="M8.2 6.4c2.6 2.6 2.6 8.6 0 11.2M15.8 6.4c-2.6 2.6-2.6 8.6 0 11.2"
-        stroke="#FAF6EE"
-        strokeWidth="1.1"
-        strokeLinecap="round"
-        opacity="0.45"
-      />
-      <path
-        d="M8.6 16.4V7.6h2.1l2.6 5.6 2.6-5.6h2.1v8.8h-1.8V10.2l-2.5 5.3h-1.1L10.4 10.2v6.2H8.6Z"
-        fill="#FAF6EE"
-      />
-    </svg>
-  );
+  return <img className={`${className} cricket-crest`.trim()} src={LEAGUE_LOGO_SRC} alt="" />;
 }
 
 export function CricketMarks({ className = "" }: { className?: string }) {

@@ -60,7 +60,8 @@ section{position:relative;}
   flex-shrink:0;
 }
 .brand .mark-photo{
-  padding:0;background:transparent;object-fit:cover;overflow:hidden;
+  width:52px;height:52px;padding:0;border-radius:0;
+  background:transparent;object-fit:contain;overflow:visible;
 }
 .brand .word{font-family:'Anton',sans-serif;font-size:19px;letter-spacing:0.03em;}
 .brand .word span{color:var(--gold);}
@@ -329,6 +330,7 @@ section{position:relative;}
 footer{background:var(--ink);color:rgba(255,255,255,0.7);padding:56px 0 28px;}
 .foot-top{display:flex;justify-content:space-between;gap:40px;flex-wrap:wrap;padding-bottom:36px;border-bottom:1px solid rgba(255,255,255,0.12);}
 .foot-brand .word{font-family:'Anton',sans-serif;font-size:20px;color:var(--white);letter-spacing:0.03em;}
+.foot-brand .foot-mark{width:72px;height:72px;object-fit:contain;margin-bottom:12px;}
 .foot-brand p{font-size:13.5px;max-width:320px;margin-top:10px;line-height:1.6;}
 .foot-cols{display:flex;gap:56px;flex-wrap:wrap;}
 .foot-col h4{font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.45);margin:0 0 12px;font-weight:600;}
@@ -436,6 +438,7 @@ tr.not-buyable{opacity:0.55;}
 .photo-sm{width:36px;height:36px;}
 .photo-md{width:88px;height:88px;}
 .photo-lg{width:128px;height:128px;}
+.photo-contain{object-fit:contain;background:transparent;}
 .photo-fallback{
   display:inline-flex;align-items:center;justify-content:center;
   font-family:'Anton',sans-serif;letter-spacing:0.04em;
@@ -507,6 +510,7 @@ tr.not-buyable{opacity:0.55;}
 }
 
 .cricket-icon{width:22px;height:22px;display:block;color:currentColor;}
+.cricket-icon.cricket-crest{object-fit:contain;}
 .cricket-marks{
   display:flex;align-items:center;gap:14px;margin-top:22px;
   color:rgba(255,255,255,0.82);
