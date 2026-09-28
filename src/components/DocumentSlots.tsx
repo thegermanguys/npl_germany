@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, type FormEvent } from "react";
 import type { ActionState } from "@/app/actions/auth";
 import {
   DOCUMENT_SLOTS,
@@ -45,23 +45,17 @@ function DocumentSlotRow({
   action: (state: ActionState, formData: FormData) => Promise<ActionState>;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function onFileChange(event: FormEvent<HTMLInputElement>) {
+    if (event.currentTarget.files?.length) event.currentTarget.form?.requestSubmit();
+  }
 
   return (
     <form action={formAction} className="document-slot">
       <input type="hidden" name="slot" value={slot} />
-      <label>
-        {label}
-        <input
-          type="file"
-          name="document"
-          accept="application/pdf,image/jpeg,image/png"
-          required
-        />
-      </label>
-      <button type="submit" className="btn btn-navy btn-small" disabled={pending}>
-        {pending ? "Saving…" : "Save"}
-      </button>
-      <div className="document-slot-meta">
+      <span className="document-slot-label">{label}</span>
+      <span className="document-slot-meta">
         {mediaId ? (
           <a href={documentPath(mediaId)} target="_blank" rel="noreferrer">
             Uploaded
@@ -69,8 +63,26 @@ function DocumentSlotRow({
         ) : (
           <span className="muted">Not uploaded</span>
         )}
-        {state.error ? <div className="form-msg err">{state.error}</div> : null}
-      </div>
+      </span>
+      <button
+        type="button"
+        className="document-slot-action"
+        disabled={pending}
+        onClick={() => inputRef.current?.click()}
+      >
+        {pending ? "Saving…" : mediaId ? "Replace" : "Upload"}
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        name="document"
+        accept="application/pdf,image/jpeg,image/png"
+        className="sr-file"
+        tabIndex={-1}
+        disabled={pending}
+        onChange={onFileChange}
+      />
+      {state.error ? <div className="form-msg err">{state.error}</div> : null}
     </form>
   );
 }

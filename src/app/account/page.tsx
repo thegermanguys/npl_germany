@@ -50,8 +50,7 @@ export default async function AccountPage() {
       <section className="page-hero">
         <div className="wrap">
           <div className="eyebrow">YOUR PROFILE</div>
-          <h1>{user.displayName}</h1>
-          {profile ? <EligibilityBadge player={profile} /> : null}
+          {profile ? <EligibilityBadge player={profile} /> : <h1>{user.displayName}</h1>}
         </div>
       </section>
       <section className="players-section">
@@ -60,10 +59,10 @@ export default async function AccountPage() {
             <PhotoControl
               action={uploadOwnPhoto}
               title={profile.full_name}
+              lines={[profile.city, profile.playing_role]}
               src={profile.photo_id ? mediaPath(profile.photo_id) : null}
             />
           ) : null}
-          {documents ? <DocumentSlots documents={documents} action={uploadOwnDocument} /> : null}
           {profile ? <PlayerStatsDetail player={profile} /> : null}
           <div className="form-card">
             {profile ? (
@@ -72,6 +71,7 @@ export default async function AccountPage() {
               <p>No player profile is attached to this account.</p>
             )}
           </div>
+          {documents ? <DocumentSlots documents={documents} action={uploadOwnDocument} /> : null}
         </div>
       </section>
     </>
