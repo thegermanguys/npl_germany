@@ -529,3 +529,66 @@ tr.not-buyable{opacity:0.55;}
   .hero-visual{align-items:flex-start;}
   .page-hero-row{flex-direction:column;align-items:flex-start;}
 }
+
+.badge-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.auction-room .form-msg{margin-bottom:16px;}
+.auction-card{
+  display:flex;gap:28px;align-items:center;
+  background:var(--white);border:1px solid var(--line);border-radius:10px;
+  padding:28px;margin-bottom:24px;
+}
+.auction-card h2{font-size:clamp(28px,4vw,42px);color:var(--navy);margin:6px 0 8px;}
+.auction-card .lede{margin:0 0 6px;color:var(--navy);}
+.auction-base{font-weight:700;color:var(--navy);margin:12px 0 8px;}
+.auction-board .table-wrap{margin-top:28px;}
+.inline-price{display:flex;align-items:center;gap:4px;font-weight:600;color:var(--navy);}
+.inline-price input{
+  width:88px;padding:6px 8px;border:1px solid var(--line);border-radius:5px;font:inherit;
+}
+.table-actions{margin:16px 0 28px;}
+.purse-meter{margin-top:12px;}
+.purse-row{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted);}
+.purse-row strong{color:var(--navy);}
+.purse-bar{height:6px;background:var(--line);border-radius:99px;margin-top:8px;overflow:hidden;}
+.purse-bar span{display:block;height:100%;background:var(--navy);border-radius:99px;}
+.purse-bar span.over{background:var(--crimson);}
+.page-hero .purse-meter{max-width:280px;margin-top:14px;}
+.page-hero .purse-row{color:rgba(255,255,255,0.72);}
+.page-hero .purse-row strong{color:var(--white);}
+.page-hero .purse-bar{background:rgba(255,255,255,0.2);}
+.page-hero .purse-bar span{background:var(--gold);}
+.page-hero .purse-bar span.over{background:var(--crimson);}
+.purse-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px;}
+.squad-group{margin:32px 0;}
+.squad-group h2{font-size:22px;color:var(--navy);margin-bottom:16px;}
+.fr-page-icon{
+  width:128px;height:128px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.fr-page-icon .icon{width:64px;height:64px;}
+.elig-badge.auction-pending_review{background:#C4841D;}
+.elig-badge.auction-approved{background:#2E86D6;}
+.elig-badge.auction-in_auction_pool{background:var(--navy);}
+.elig-badge.auction-sold{background:#1E8A72;}
+.elig-badge.auction-rejected,.elig-badge.auction-unsold{background:var(--crimson-dark);}
+.muted-hero{color:rgba(255,255,255,0.45);}
+.fixture-day{margin:32px 0;}
+.fixture-day h2{
+  font-family:'Inter',sans-serif;font-size:18px;font-weight:700;
+  text-transform:none;letter-spacing:0;color:var(--navy);margin-bottom:14px;
+}
+.fixture-list{display:flex;flex-direction:column;gap:10px;}
+.fixture-row{
+  display:flex;justify-content:space-between;align-items:center;gap:18px;
+  background:var(--white);border:1px solid var(--line);border-radius:10px;
+  padding:18px 22px;
+}
+.fixture-teams{display:flex;align-items:baseline;gap:10px;font-weight:700;color:var(--navy);font-size:18px;}
+.fixture-meta{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:13.5px;color:var(--navy);}
+.elig-badge.fixture-scheduled{background:var(--navy);}
+.elig-badge.fixture-live{background:var(--crimson);}
+.elig-badge.fixture-completed{background:#1E8A72;}
+.elig-badge.fixture-abandoned{background:var(--crimson-dark);}
+@media (max-width:700px){
+  .fixture-row{flex-direction:column;align-items:flex-start;}
+}

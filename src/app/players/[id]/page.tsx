@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { adminUpdatePlayer } from "@/app/actions/admin";
 import { uploadPlayerPhoto } from "@/app/actions/media";
+import { AuctionStatusBadge } from "@/components/AuctionStatusBadge";
 import { EligibilityBadge } from "@/components/EligibilityBadge";
 import { EligibilityReview } from "@/components/EligibilityReview";
 import { Nav } from "@/components/Nav";
@@ -11,6 +12,7 @@ import { PhotoCircle } from "@/components/PhotoCircle";
 import { PhotoControl } from "@/components/PhotoControl";
 import { PlayerStatsDetail } from "@/components/PlayerStats";
 import { ProfileForm } from "@/components/ProfileForm";
+import { formatEuro, auctionStatusLabel } from "@/lib/auction";
 import { DbNotConfiguredError, ballLabel, isDatabaseConfigured } from "@/lib/db";
 import { canViewPlayer } from "@/lib/eligibility";
 import { mediaPath } from "@/lib/media";
@@ -103,7 +105,10 @@ export default async function PlayerProfilePage({
               {player.playing_role} · {player.city}
               {player.franchise_name ? ` · ${player.franchise_name}` : ""}
             </p>
-            <EligibilityBadge player={player} />
+            <div className="badge-row">
+              <EligibilityBadge player={player} />
+              <AuctionStatusBadge status={player.auction_status} />
+            </div>
           </div>
         </div>
       </section>
@@ -155,6 +160,22 @@ export default async function PlayerProfilePage({
                 <dt>Franchise</dt>
                 <dd>{player.franchise_name || "Unassigned"}</dd>
               </div>
+              <div>
+                <dt>Auction</dt>
+                <dd>{auctionStatusLabel(player.auction_status)}</dd>
+              </div>
+              {player.base_price != null ? (
+                <div>
+                  <dt>Base price</dt>
+                  <dd>{formatEuro(player.base_price)}</dd>
+                </div>
+              ) : null}
+              {player.sold_price != null ? (
+                <div>
+                  <dt>Sold for</dt>
+                  <dd>{formatEuro(player.sold_price)}</dd>
+                </div>
+              ) : null}
               <div>
                 <dt>Nepali</dt>
                 <dd>{player.nepali_citizen ? "Yes" : "No"}</dd>

@@ -7,12 +7,6 @@ export async function middleware(request: NextRequest) {
   const user = token && secret ? await readSessionToken(token) : null;
   const path = request.nextUrl.pathname;
 
-  if (path.startsWith("/admin")) {
-    if (user?.role !== "admin") {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
-  }
-
   if (path.startsWith("/account") && !user) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
@@ -21,5 +15,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin", "/admin/:path*", "/account", "/account/:path*"],
+  matcher: ["/account", "/account/:path*"],
 };

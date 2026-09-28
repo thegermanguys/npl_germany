@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FRANCHISE_COPY } from "@/data/franchises";
+import { franchiseColorVar, franchiseIconFromSlug } from "@/data/franchises";
 import { CricketIcon, CricketMarks } from "@/components/CricketIcon";
 import { CricketPitch } from "@/components/CricketPitch";
 import { FranchiseIcon } from "@/components/FranchiseIcon";
@@ -13,8 +13,8 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const { user, season, franchises } = await loadPortal();
-  const logos = new Map(franchises.map((row) => [row.slug, row.logo_id]));
   const ball = season ? ballLabel(season.ball_type) : "Deuce ball";
+  const franchiseCount = franchises.length || 6;
 
   return (
     <>
@@ -53,7 +53,7 @@ export default async function HomePage() {
               </div>
               <div className="hb-row">
                 <span className="k">Franchises</span>
-                <span className="v">6</span>
+                <span className="v">{franchiseCount}</span>
               </div>
               <div className="hb-row">
                 <span className="k">Eligibility</span>
@@ -75,7 +75,7 @@ export default async function HomePage() {
             />
           </svg>
           <div className="peak-nav">
-            {FRANCHISE_COPY.map((franchise) => (
+            {franchises.map((franchise) => (
               <a key={franchise.slug} href={`#f-${franchise.city.toLowerCase()}`}>
                 {franchise.city.toUpperCase()}
                 <span>{franchise.name}</span>
@@ -88,7 +88,7 @@ export default async function HomePage() {
           <div className="stat-strip">
         <div className="wrap">
           <span>
-            <CricketIcon name="league" /> 6 FRANCHISES
+            <CricketIcon name="league" /> {franchiseCount} FRANCHISES
           </span>
           <span className="dot">·</span>
           <span>100% NEPALI ROSTERS</span>
@@ -158,35 +158,35 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="fr-grid">
-            {FRANCHISE_COPY.map((franchise) => {
-              const logoId = logos.get(franchise.slug);
-              return (
-                <div className="fr-card" id={`f-${franchise.city.toLowerCase()}`} key={franchise.slug}>
-                  <div className="fr-top" style={{ background: `var(--${franchise.colorVar})` }}>
-                    <div className="fr-city">{franchise.city.toUpperCase()}</div>
-                    <h3>{franchise.name}</h3>
-                    <div className="fr-logo">
-                      {logoId ? (
-                        <img src={mediaPath(logoId)} alt={`${franchise.city} ${franchise.name} logo`} />
-                      ) : (
-                        <FranchiseIcon icon={franchise.icon} />
-                      )}
-                    </div>
-                  </div>
-                  <div className="fr-body">
-                    <div className="fr-kit" aria-hidden="true">
-                      <CricketIcon name="bat" />
-                      <CricketIcon name="stumps" />
-                    </div>
-                    <div className="tag">&ldquo;{franchise.tagline}&rdquo;</div>
-                    <p>{franchise.description}</p>
-                    <Link className="fr-link" href="/players">
-                      View players →
-                    </Link>
+            {franchises.map((franchise) => (
+              <div className="fr-card" id={`f-${franchise.city.toLowerCase()}`} key={franchise.id}>
+                <div className="fr-top" style={{ background: franchiseColorVar(franchise.color_key) }}>
+                  <div className="fr-city">{franchise.city.toUpperCase()}</div>
+                  <h3>{franchise.name}</h3>
+                  <div className="fr-logo">
+                    {franchise.logo_id ? (
+                      <img
+                        src={mediaPath(franchise.logo_id)}
+                        alt={`${franchise.city} ${franchise.name} logo`}
+                      />
+                    ) : (
+                      <FranchiseIcon icon={franchiseIconFromSlug(franchise.slug)} />
+                    )}
                   </div>
                 </div>
-              );
-            })}
+                <div className="fr-body">
+                  <div className="fr-kit" aria-hidden="true">
+                    <CricketIcon name="bat" />
+                    <CricketIcon name="stumps" />
+                  </div>
+                  <div className="tag">&ldquo;{franchise.tagline}&rdquo;</div>
+                  <p>{franchise.description}</p>
+                  <Link className="fr-link" href={`/franchises/${franchise.city.toLowerCase()}`}>
+                    View squad →
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

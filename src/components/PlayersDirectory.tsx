@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { franchiseColorVar } from "@/data/franchises";
 import { isBuyable } from "@/lib/eligibility";
 import { mediaPath } from "@/lib/media";
 import type { PlayerListItem } from "@/lib/types";
@@ -9,32 +10,22 @@ import { EligibilityBadge } from "./EligibilityBadge";
 import { PhotoCircle } from "./PhotoCircle";
 import { PlayerStatsStrip } from "./PlayerStats";
 
-const FRANCHISE_COLORS: Record<string, string> = {
-  frankfurt: "var(--frankfurt)",
-  munich: "var(--munich)",
-  berlin: "var(--berlin)",
-  hamburg: "var(--hamburg)",
-  cologne: "var(--cologne)",
-  stuttgart: "var(--stuttgart)",
-};
-
 export function PlayersDirectory({
   players,
   inspect,
   showEligibility = false,
+  franchiseCities,
 }: {
   players: PlayerListItem[];
   inspect: boolean;
   showEligibility?: boolean;
+  franchiseCities: string[];
 }) {
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("All");
   const [role, setRole] = useState("All");
 
-  const cities = useMemo(
-    () => ["All", ...Array.from(new Set(players.map((player) => player.city)))],
-    [players],
-  );
+  const cities = useMemo(() => ["All", ...franchiseCities], [franchiseCities]);
   const roles = useMemo(
     () => ["All", ...Array.from(new Set(players.map((player) => player.playing_role)))],
     [players],
@@ -49,7 +40,25 @@ export function PlayersDirectory({
   });
 
   if (players.length === 0) {
-    return <div className="empty-note">No buyable players yet.</div>;
+    return (
+      <div>
+        {franchiseCities.length > 0 ? (
+          <div className="filter-row">
+            {cities.map((name) => (
+              <button
+                key={name}
+                type="button"
+                className={`filter-chip${city === name ? " active" : ""}`}
+                onClick={() => setCity(name)}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        <div className="empty-note">No buyable players yet.</div>
+      </div>
+    );
   }
 
   return (
@@ -142,7 +151,7 @@ export function PlayersDirectory({
         <div className="players-grid">
           {list.map((player) => {
             const color = player.franchise_color
-              ? FRANCHISE_COLORS[player.franchise_color] || "var(--navy)"
+              ? franchiseColorVar(player.franchise_color)
               : "var(--navy)";
             return (
               <Link className="player-card" key={player.id} href={`/players/${player.id}`}>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { forbidden, redirect } from "next/navigation";
 import { SeasonForm } from "@/components/AdminForms";
 import { Nav } from "@/components/Nav";
 import { isDatabaseConfigured } from "@/lib/db";
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminSeasonPage() {
   const user = await getSession();
-  if (!isAdmin(user)) redirect("/login");
+  if (!isAdmin(user)) forbidden();
   if (!isDatabaseConfigured()) redirect("/admin");
 
   const season = await getCurrentSeason();

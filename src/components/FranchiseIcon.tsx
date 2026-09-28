@@ -1,6 +1,6 @@
-import type { FranchiseCopy } from "@/data/franchises";
+import type { FranchiseIconName } from "@/data/franchises";
 
-export function FranchiseIcon({ icon }: { icon: FranchiseCopy["icon"] }) {
+export function FranchiseIcon({ icon }: { icon: FranchiseIconName }) {
   if (icon === "gorkhas") {
     return (
       <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.6">
