@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { isMediaId, mediaPath, readImageFile } from "./media.ts";
+import { asMediaBuffer, bytesForDatabase, isMediaId, mediaPath, readImageFile } from "./media.ts";
 
 describe("mediaPath", () => {
   it("serves assets from /api/media", () => {
@@ -14,6 +14,16 @@ describe("isMediaId", () => {
   });
   it("rejects a path fragment", () => {
     assert.equal(isMediaId("../secret"), false);
+  });
+});
+
+describe("asMediaBuffer", () => {
+  it("reads neon and node bytea shapes", () => {
+    const raw = Buffer.from([1, 2, 3]);
+    assert.deepEqual(asMediaBuffer(raw), raw);
+    assert.deepEqual(asMediaBuffer(new Uint8Array([1, 2, 3])), raw);
+    assert.deepEqual(asMediaBuffer({ data: [1, 2, 3] }), raw);
+    assert.deepEqual(bytesForDatabase(raw) instanceof Uint8Array, true);
   });
 });
 

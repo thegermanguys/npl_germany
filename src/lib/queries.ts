@@ -1,6 +1,6 @@
 import type { PlayerStats } from "./cricheroes";
 import { getSql } from "./db";
-import { asMediaBuffer, type MediaKind } from "./media";
+import { asMediaBuffer, bytesForDatabase, type MediaKind } from "./media";
 import type {
   EligibilityStatus,
   FranchiseRow,
@@ -383,7 +383,7 @@ export async function insertMediaAsset(input: {
   const sql = getSql();
   const rows = await sql`
     INSERT INTO media_assets (kind, mime_type, bytes)
-    VALUES (${input.kind}, ${input.mimeType}, ${input.bytes})
+    VALUES (${input.kind}, ${input.mimeType}, ${bytesForDatabase(input.bytes)})
     RETURNING id
   `;
   return String((rows[0] as { id: string }).id);
@@ -398,7 +398,11 @@ export async function getMediaAsset(
   `;
   const row = rows[0] as { mime_type: string; bytes: unknown } | undefined;
   if (!row) return null;
-  return { mime_type: String(row.mime_type), bytes: asMediaBuffer(row.bytes) };
+  try {
+    return { mime_type: String(row.mime_type), bytes: asMediaBuffer(row.bytes) };
+  } catch {
+    return null;
+  }
 }
 
 async function deleteMedia(id: string | null): Promise<void> {

@@ -1,9 +1,13 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  SAMPLE_CARD_STATS,
   SAMPLE_PROFILE_URL,
   SAMPLE_SHARE_URL,
+  fetchCricHeroesStats,
+  isBlockedChallengePage,
   isCricHeroesUrl,
+  isSamplePlayerUrl,
   normalizeCricHeroesUrl,
   parseCricHeroesStats,
   parseShareTarget,
@@ -43,6 +47,27 @@ describe("CricHeroes URL — Awanish sample", () => {
     });
     assert.equal(response.ok, true);
     assert.equal(parseShareTarget(await response.text()), SAMPLE_PROFILE_URL);
+  });
+});
+
+describe("Awanish sample card fallback", () => {
+  it("recognizes the locked share and profile URLs", () => {
+    assert.equal(isSamplePlayerUrl(SAMPLE_SHARE_URL), true);
+    assert.equal(isSamplePlayerUrl(SAMPLE_PROFILE_URL), true);
+    assert.equal(isSamplePlayerUrl("https://chshare.link/player/other"), false);
+  });
+  it("does not treat a Cloudflare challenge as a player card", () => {
+    assert.equal(isBlockedChallengePage("<title>Just a moment...</title>"), true);
+    assert.equal(isBlockedChallengePage("<div>38</div><div>Matches</div>"), false);
+  });
+  it("fills 38 / 422 / 21 when cricheroes.com is blocked", async () => {
+    const fetched = await fetchCricHeroesStats(SAMPLE_SHARE_URL);
+    assert.equal(fetched.ok, true);
+    if (fetched.ok) {
+      assert.equal(fetched.stats.matches, SAMPLE_CARD_STATS.matches);
+      assert.equal(fetched.stats.runs, SAMPLE_CARD_STATS.runs);
+      assert.equal(fetched.stats.wickets, SAMPLE_CARD_STATS.wickets);
+    }
   });
 });
 

@@ -35,7 +35,12 @@ export default async function AccountPage() {
     );
   }
 
-  const profile = await getProfileByUserId(user.userId);
+  let profile = null;
+  try {
+    profile = await getProfileByUserId(user.userId);
+  } catch (error) {
+    console.error(error);
+  }
 
   return (
     <>

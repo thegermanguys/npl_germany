@@ -3,7 +3,7 @@
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { isUsablePasswordHash } from "@/lib/admin-account";
-import { emptyStats, resolvePlayerStats } from "@/lib/cricheroes";
+import { emptyStats, resolvePlayerStats, type PlayerStats } from "@/lib/cricheroes";
 import { DbNotConfiguredError } from "@/lib/db";
 import { createPlayerProfile, createUser, getCurrentSeason, getUserByEmail } from "@/lib/queries";
 import { clearSession, isAuthConfigured, setSession } from "@/lib/session";
@@ -12,6 +12,7 @@ import { checkboxOn, validateLogin, validateRegistration } from "@/lib/validate"
 export type ActionState = {
   error?: string;
   fieldErrors?: Record<string, string>;
+  stats?: PlayerStats;
 };
 
 export async function registerPlayer(

@@ -1,3 +1,4 @@
+import type { ChangeEvent, FocusEvent } from "react";
 import {
   BATTING_HANDS,
   BOWLING_STYLES,
@@ -12,13 +13,30 @@ export function TextField(props: {
   label: string;
   type?: string;
   defaultValue?: string;
+  value?: string;
   placeholder?: string;
   required?: boolean;
   error?: string;
   full?: boolean;
   autoComplete?: string;
+  onBlur?: (event: FocusEvent<HTMLInputElement>) => void;
+  onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
 }) {
-  const { id, name, label, type = "text", defaultValue, placeholder, required, error, full, autoComplete } = props;
+  const {
+    id,
+    name,
+    label,
+    type = "text",
+    defaultValue,
+    value,
+    placeholder,
+    required,
+    error,
+    full,
+    autoComplete,
+    onBlur,
+    onChange,
+  } = props;
   return (
     <div className={`field${full ? " full" : ""}`}>
       <label htmlFor={id}>{label}</label>
@@ -26,10 +44,11 @@ export function TextField(props: {
         id={id}
         name={name}
         type={type}
-        defaultValue={defaultValue}
+        {...(value !== undefined ? { value, onChange } : { defaultValue, onChange })}
         placeholder={placeholder}
         required={required}
         autoComplete={autoComplete}
+        onBlur={onBlur}
       />
       {error ? <span className="field-error">{error}</span> : null}
     </div>
