@@ -201,6 +201,25 @@ export function validateLogin(
   return { ok: true, value: { email, password } };
 }
 
+export function validateResetEmail(
+  email: string,
+): { ok: true; email: string } | { ok: false; errors: FieldErrors } {
+  const value = normalizeEmail(email);
+  if (!isValidEmail(value)) return { ok: false, errors: { email: "Enter a valid email." } };
+  return { ok: true, email: value };
+}
+
+export function validateNewPassword(
+  password: string,
+  confirm: string,
+): { ok: true; password: string } | { ok: false; errors: FieldErrors } {
+  const errors: FieldErrors = {};
+  if (password.length < 8) errors.password = "Use at least 8 characters.";
+  if (confirm !== password) errors.confirm = "Passwords do not match.";
+  if (Object.keys(errors).length) return { ok: false, errors };
+  return { ok: true, password };
+}
+
 export function validateNewAccount(input: {
   displayName: string;
   email: string;

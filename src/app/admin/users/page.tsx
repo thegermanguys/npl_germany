@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CreateAccountForm } from "@/components/AdminForms";
+import { AdminSetPasswordForm, CreateAccountForm } from "@/components/AdminForms";
 import { Nav } from "@/components/Nav";
 import { isDatabaseConfigured } from "@/lib/db";
 import { listFranchises, listUsers } from "@/lib/queries";
@@ -40,6 +40,7 @@ export default async function AdminUsersPage() {
                   <th>Email</th>
                   <th>Role</th>
                   <th>Franchise</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -49,6 +50,9 @@ export default async function AdminUsersPage() {
                     <td>{row.email}</td>
                     <td>{row.role.replace("_", " ")}</td>
                     <td>{row.franchise_name || "—"}</td>
+                    <td>
+                      <AdminSetPasswordForm userId={row.id} />
+                    </td>
                   </tr>
                 ))}
               </tbody>

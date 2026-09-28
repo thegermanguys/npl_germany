@@ -146,6 +146,63 @@ export async function listUsers(): Promise<Array<UserRow & { franchise_name: str
   return rows as Array<UserRow & { franchise_name: string | null }>;
 }
 
+export async function updateUserPassword(userId: string, passwordHash: string): Promise<void> {
+  const sql = getSql();
+  await sql`
+    UPDATE users
+    SET password_hash = ${passwordHash}, updated_at = now()
+    WHERE id = ${userId}
+  `;
+}
+
+export async function replacePasswordResetToken(input: {
+  userId: string;
+  tokenHash: string;
+  expiresAt: Date;
+}): Promise<void> {
+  const sql = getSql();
+  await sql`
+    UPDATE password_reset_tokens
+    SET used_at = now()
+    WHERE user_id = ${input.userId} AND used_at IS NULL
+  `;
+  await sql`
+    INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+    VALUES (${input.userId}, ${input.tokenHash}, ${input.expiresAt.toISOString()})
+  `;
+}
+
+export async function findValidResetToken(
+  tokenHash: string,
+): Promise<{ id: string; userId: string } | null> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT id, user_id
+    FROM password_reset_tokens
+    WHERE token_hash = ${tokenHash}
+      AND used_at IS NULL
+      AND expires_at > now()
+    LIMIT 1
+  `;
+  const row = rows[0] as { id: string; user_id: string } | undefined;
+  if (!row) return null;
+  return { id: String(row.id), userId: String(row.user_id) };
+}
+
+export async function consumeResetToken(id: string): Promise<void> {
+  const sql = getSql();
+  await sql`UPDATE password_reset_tokens SET used_at = now() WHERE id = ${id}`;
+}
+
+export async function invalidateUserResetTokens(userId: string): Promise<void> {
+  const sql = getSql();
+  await sql`
+    UPDATE password_reset_tokens
+    SET used_at = now()
+    WHERE user_id = ${userId} AND used_at IS NULL
+  `;
+}
+
 export async function listFranchises(): Promise<FranchiseRow[]> {
   const sql = getSql();
   const rows = await sql`

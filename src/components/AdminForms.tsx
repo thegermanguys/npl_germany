@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import {
+  adminSetPassword,
   adminUpdateFranchise,
   adminUpdateSeason,
   createAccount,
@@ -139,6 +140,25 @@ export function FranchiseEditForm({ franchise }: { franchise: FranchiseRow }) {
       </div>
       <button type="submit" className="btn btn-navy btn-small" disabled={pending}>
         {pending ? "Saving…" : "Save"}
+      </button>
+    </form>
+  );
+}
+
+export function AdminSetPasswordForm({ userId }: { userId: string }) {
+  const [state, action, pending] = useActionState(adminSetPassword, {});
+
+  return (
+    <form action={action} className="admin-set-password">
+      <input type="hidden" name="userId" value={userId} />
+      {state.notice ? <div className="muted">{state.notice}</div> : null}
+      {state.error ? <div className="form-msg err">{state.error}</div> : null}
+      <label>
+        New password
+        <input type="password" name="password" autoComplete="new-password" required minLength={8} />
+      </label>
+      <button type="submit" className="btn btn-navy btn-small" disabled={pending}>
+        {pending ? "Saving…" : "Set"}
       </button>
     </form>
   );

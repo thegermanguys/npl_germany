@@ -1,23 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LoginForm } from "@/components/LoginForm";
+import { ForgotPasswordForm } from "@/components/ForgotPasswordForm";
 import { Nav } from "@/components/Nav";
 import { getSession } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Sign in" };
+export const metadata: Metadata = { title: "Forgot password" };
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ reset?: string }>;
-}) {
+export default async function ForgotPasswordPage() {
   const user = await getSession();
   if (user?.role === "admin") redirect("/admin");
   if (user?.role === "franchise_owner") redirect("/players");
   if (user?.role === "player") redirect("/account");
-  const { reset } = await searchParams;
 
   return (
     <>
@@ -25,19 +20,16 @@ export default async function LoginPage({
       <section className="page-hero">
         <div className="wrap">
           <div className="eyebrow">PORTAL</div>
-          <h1>Sign in</h1>
+          <h1>Forgot password</h1>
         </div>
       </section>
       <section className="players-section">
         <div className="wrap narrow">
           <div className="form-card">
-            {reset ? <div className="form-msg ok">Password updated. Sign in.</div> : null}
-            <LoginForm />
+            <ForgotPasswordForm />
+            <p className="form-follow">No email? Ask the league admin.</p>
             <p className="form-follow">
-              <Link href="/login/forgot">Forgot password?</Link>
-            </p>
-            <p className="form-follow">
-              Players register here: <Link href="/register">Register to play</Link>
+              <Link href="/login">Back to sign in</Link>
             </p>
           </div>
         </div>
