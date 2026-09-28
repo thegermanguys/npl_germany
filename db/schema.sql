@@ -102,13 +102,26 @@ ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS stats_fetched_at timestampt
 
 CREATE TABLE IF NOT EXISTS media_assets (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  kind text NOT NULL CHECK (kind IN ('player_photo', 'franchise_logo', 'league_logo')),
+  kind text NOT NULL CHECK (kind IN (
+    'player_photo', 'franchise_logo', 'league_logo',
+    'passport', 'residence_permit', 'health_insurance'
+  )),
   mime_type text NOT NULL,
   bytes bytea NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
+ALTER TABLE media_assets DROP CONSTRAINT IF EXISTS media_assets_kind_check;
+ALTER TABLE media_assets ADD CONSTRAINT media_assets_kind_check
+  CHECK (kind IN (
+    'player_photo', 'franchise_logo', 'league_logo',
+    'passport', 'residence_permit', 'health_insurance'
+  ));
+
 ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS photo_id uuid REFERENCES media_assets(id) ON DELETE SET NULL;
+ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS passport_id uuid REFERENCES media_assets(id) ON DELETE SET NULL;
+ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS residence_permit_id uuid REFERENCES media_assets(id) ON DELETE SET NULL;
+ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS health_insurance_id uuid REFERENCES media_assets(id) ON DELETE SET NULL;
 ALTER TABLE franchises ADD COLUMN IF NOT EXISTS logo_id uuid REFERENCES media_assets(id) ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS league_settings (

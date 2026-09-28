@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { uploadOwnPhoto } from "@/app/actions/media";
+import { uploadOwnDocument, uploadOwnPhoto } from "@/app/actions/media";
 import { updateOwnProfile } from "@/app/actions/players";
+import { DocumentSlots } from "@/components/DocumentSlots";
 import { EligibilityBadge } from "@/components/EligibilityBadge";
 import { Nav } from "@/components/Nav";
-import { PhotoCircle } from "@/components/PhotoCircle";
-import { PhotoUpload } from "@/components/PhotoUpload";
+import { PhotoControl } from "@/components/PhotoControl";
 import { PlayerStatsDetail } from "@/components/PlayerStats";
 import { ProfileForm } from "@/components/ProfileForm";
 import { mediaPath } from "@/lib/media";
-import { getProfileByUserId } from "@/lib/queries";
+import { getPlayerDocuments, getProfileByUserId } from "@/lib/queries";
 import { getSession } from "@/lib/session";
 import { isDatabaseConfigured } from "@/lib/db";
 
@@ -35,7 +35,14 @@ export default async function AccountPage() {
     );
   }
 
-  const profile = await getProfileByUserId(user.userId);
+  let profile = null;
+  let documents = null;
+  try {
+    profile = await getProfileByUserId(user.userId);
+    if (profile) documents = await getPlayerDocuments(profile.id);
+  } catch (error) {
+    console.error(error);
+  }
 
   return (
     <>
@@ -50,15 +57,13 @@ export default async function AccountPage() {
       <section className="players-section">
         <div className="wrap narrow">
           {profile ? (
-            <div className="photo-block">
-              <PhotoCircle
-                src={profile.photo_id ? mediaPath(profile.photo_id) : null}
-                name={profile.full_name}
-                size="lg"
-              />
-              <PhotoUpload action={uploadOwnPhoto} label="Photo" />
-            </div>
+            <PhotoControl
+              action={uploadOwnPhoto}
+              title={profile.full_name}
+              src={profile.photo_id ? mediaPath(profile.photo_id) : null}
+            />
           ) : null}
+          {documents ? <DocumentSlots documents={documents} action={uploadOwnDocument} /> : null}
           {profile ? <PlayerStatsDetail player={profile} /> : null}
           <div className="form-card">
             {profile ? (

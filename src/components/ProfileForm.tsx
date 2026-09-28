@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import type { ActionState } from "@/app/actions/auth";
+import { lookupCricHeroesStats } from "@/app/actions/players";
 import {
   BattingSelect,
   BowlingSelect,
@@ -10,8 +11,21 @@ import {
   RoleSelect,
   TextField,
 } from "./FormFields";
-import { SAMPLE_SHARE_URL } from "@/lib/cricheroes";
+import { SAMPLE_SHARE_URL, type PlayerStats } from "@/lib/cricheroes";
 import type { FranchiseRow, PlayerListItem } from "@/lib/types";
+
+function statsToFields(player: PlayerListItem, extra?: PlayerStats | null) {
+  return {
+    matches: (extra?.matches ?? player.stats_matches)?.toString() ?? "",
+    runs: (extra?.runs ?? player.stats_runs)?.toString() ?? "",
+    wickets: (extra?.wickets ?? player.stats_wickets)?.toString() ?? "",
+    battingAvg: (extra?.battingAvg ?? player.stats_batting_avg)?.toString() ?? "",
+    strikeRate: (extra?.strikeRate ?? player.stats_strike_rate)?.toString() ?? "",
+    economy: (extra?.economy ?? player.stats_economy)?.toString() ?? "",
+    highScore: (extra?.highScore ?? player.stats_high_score)?.toString() ?? "",
+    bestBowling: extra?.bestBowling ?? player.stats_best_bowling ?? "",
+  };
+}
 
 export function ProfileForm({
   player,
@@ -25,6 +39,18 @@ export function ProfileForm({
   assignFranchise?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
+  const [stats, setStats] = useState(() => statsToFields(player));
+
+  useEffect(() => {
+    if (state.stats) setStats(statsToFields(player, state.stats));
+  }, [player, state.stats]);
+
+  async function fillFromUrl(raw: string) {
+    const result = await lookupCricHeroesStats(raw);
+    if (result.stats) setStats(statsToFields(player, result.stats));
+  }
+
+  const shown = stats;
 
   return (
     <form action={formAction} className="portal-form">
@@ -103,6 +129,9 @@ export function ProfileForm({
           required
           full
           error={state.fieldErrors?.cricheroesUrl}
+          onBlur={(event) => {
+            void fillFromUrl(event.currentTarget.value);
+          }}
         />
       </div>
       <div className="check-row">
@@ -127,31 +156,17 @@ export function ProfileForm({
         ) : null}
       </div>
       <div className="frow">
-        <TextField
-          id="statsMatches"
-          name="statsMatches"
-          label="Matches"
-          defaultValue={player.stats_matches?.toString() ?? ""}
-        />
-        <TextField
-          id="statsRuns"
-          name="statsRuns"
-          label="Runs"
-          defaultValue={player.stats_runs?.toString() ?? ""}
-        />
+        <TextField id="statsMatches" name="statsMatches" label="Matches" value={shown.matches} onChange={(event) => setStats({ ...shown, matches: event.currentTarget.value })} />
+        <TextField id="statsRuns" name="statsRuns" label="Runs" value={shown.runs} onChange={(event) => setStats({ ...shown, runs: event.currentTarget.value })} />
       </div>
       <div className="frow">
-        <TextField
-          id="statsWickets"
-          name="statsWickets"
-          label="Wickets"
-          defaultValue={player.stats_wickets?.toString() ?? ""}
-        />
+        <TextField id="statsWickets" name="statsWickets" label="Wickets" value={shown.wickets} onChange={(event) => setStats({ ...shown, wickets: event.currentTarget.value })} />
         <TextField
           id="statsBattingAvg"
           name="statsBattingAvg"
           label="Bat avg"
-          defaultValue={player.stats_batting_avg?.toString() ?? ""}
+          value={shown.battingAvg}
+          onChange={(event) => setStats({ ...shown, battingAvg: event.currentTarget.value })}
         />
       </div>
       <div className="frow">
@@ -159,13 +174,15 @@ export function ProfileForm({
           id="statsStrikeRate"
           name="statsStrikeRate"
           label="Strike rate"
-          defaultValue={player.stats_strike_rate?.toString() ?? ""}
+          value={shown.strikeRate}
+          onChange={(event) => setStats({ ...shown, strikeRate: event.currentTarget.value })}
         />
         <TextField
           id="statsEconomy"
           name="statsEconomy"
           label="Economy"
-          defaultValue={player.stats_economy?.toString() ?? ""}
+          value={shown.economy}
+          onChange={(event) => setStats({ ...shown, economy: event.currentTarget.value })}
         />
       </div>
       <div className="frow">
@@ -173,13 +190,15 @@ export function ProfileForm({
           id="statsHighScore"
           name="statsHighScore"
           label="High score"
-          defaultValue={player.stats_high_score?.toString() ?? ""}
+          value={shown.highScore}
+          onChange={(event) => setStats({ ...shown, highScore: event.currentTarget.value })}
         />
         <TextField
           id="statsBestBowling"
           name="statsBestBowling"
           label="Best bowling"
-          defaultValue={player.stats_best_bowling ?? ""}
+          value={shown.bestBowling}
+          onChange={(event) => setStats({ ...shown, bestBowling: event.currentTarget.value })}
         />
       </div>
       {assignFranchise && franchises ? (

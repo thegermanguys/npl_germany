@@ -334,6 +334,8 @@ footer{background:var(--ink);color:rgba(255,255,255,0.7);padding:56px 0 28px;}
 .foot-col h4{font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.45);margin:0 0 12px;font-weight:600;}
 .foot-col a,.foot-col p{display:block;font-size:14px;margin-bottom:8px;color:rgba(255,255,255,0.75);}
 .foot-bottom{display:flex;justify-content:space-between;align-items:center;padding-top:22px;font-size:12.5px;flex-wrap:wrap;gap:10px;}
+.foot-credit a{color:rgba(255,255,255,0.88);text-decoration:underline;text-underline-offset:3px;}
+.foot-credit a:hover{color:var(--white);}
 
 /* ---------- PORTAL ---------- */
 .nav-account{display:flex;align-items:center;gap:12px;}
@@ -438,19 +440,61 @@ tr.not-buyable{opacity:0.55;}
 .photo-sm.photo-fallback{font-size:13px;}
 .photo-md.photo-fallback{font-size:28px;}
 .photo-lg.photo-fallback{font-size:40px;}
-.photo-block,.fr-logo-admin{
+.photo-block,.fr-logo-admin,.photo-control{
   display:flex;align-items:center;gap:18px;margin-bottom:20px;
 }
-.photo-upload{display:flex;flex-direction:column;gap:10px;}
-.photo-upload label{font-size:12.5px;font-weight:600;color:var(--navy);display:flex;flex-direction:column;gap:6px;}
-.photo-upload input[type="file"]{font:inherit;font-size:13px;}
+.photo-control{margin-bottom:20px;}
+.photo-control-circle{
+  position:relative;display:block;border-radius:50%;flex-shrink:0;cursor:pointer;overflow:hidden;
+}
+.photo-control-input{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+.photo-control-overlay{
+  position:absolute;inset:0;border-radius:50%;
+  background:rgba(11,28,51,0.45);color:var(--white);
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  font-size:12px;font-weight:600;letter-spacing:0.02em;padding:8px;
+  opacity:0;transition:opacity .15s;pointer-events:none;
+}
+.photo-control-circle:hover .photo-control-overlay,
+.photo-control-circle.drag .photo-control-overlay,
+.photo-control-circle.pending .photo-control-overlay,
+.photo-control-circle.empty .photo-control-overlay{opacity:1;}
+.photo-control-name{
+  margin:0;font-size:20px;font-weight:700;color:var(--navy);line-height:1.2;
+}
+.photo-control-meta .form-msg{margin-top:8px;}
+.field-hint{margin:6px 0 0;font-size:12px;color:var(--muted);font-weight:500;}
+.profile-hero .photo-control{margin:0;}
+.profile-hero .photo-control-name{color:var(--white);}
+.profile-hero .field-hint{color:rgba(255,255,255,0.7);}
+.document-slots{
+  background:var(--white);border:1px solid var(--line);border-radius:10px;
+  padding:18px 20px;margin-bottom:20px;display:flex;flex-direction:column;gap:14px;
+}
+.document-slot{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px;align-items:end;
+}
+.document-slot > input[type="hidden"]{display:none;}
+.document-slot label{grid-column:1;grid-row:1;font-size:12.5px;font-weight:600;color:var(--navy);display:flex;flex-direction:column;gap:6px;}
+.document-slot button{grid-column:2;grid-row:1;justify-self:end;}
+.document-slot input[type="file"]{font:inherit;font-size:13px;}
+.document-slot-meta{grid-column:1 / -1;grid-row:2;}
+.document-slot .form-msg{margin-top:6px;}
+.document-review{margin:20px 0;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px;}
+.document-review-row{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13.5px;font-weight:600;color:var(--navy);}
+@media (max-width:700px){
+  .document-slot{grid-template-columns:1fr;}
+}
 .name-with-photo{display:flex;align-items:center;gap:12px;}
 .profile-hero{display:flex;align-items:center;gap:28px;}
 .profile-hero .photo-circle{border:3px solid rgba(255,255,255,0.25);}
 .profile-hero .lede{margin-top:10px;}
 .league-logo-card{margin-bottom:28px;max-width:520px;}
 @media (max-width:700px){
-  .profile-hero,.photo-block,.fr-logo-admin{flex-direction:column;align-items:flex-start;}
+  .profile-hero,.photo-block,.fr-logo-admin,.photo-control{flex-direction:column;align-items:flex-start;}
 }
 
 .cricket-icon{width:22px;height:22px;display:block;color:currentColor;}

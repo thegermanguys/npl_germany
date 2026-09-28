@@ -6,14 +6,15 @@ import { uploadPlayerPhoto } from "@/app/actions/media";
 import { EligibilityBadge } from "@/components/EligibilityBadge";
 import { EligibilityReview } from "@/components/EligibilityReview";
 import { Nav } from "@/components/Nav";
+import { DocumentReview } from "@/components/DocumentSlots";
 import { PhotoCircle } from "@/components/PhotoCircle";
-import { PhotoUpload } from "@/components/PhotoUpload";
+import { PhotoControl } from "@/components/PhotoControl";
 import { PlayerStatsDetail } from "@/components/PlayerStats";
 import { ProfileForm } from "@/components/ProfileForm";
 import { DbNotConfiguredError, ballLabel, isDatabaseConfigured } from "@/lib/db";
 import { canViewPlayer } from "@/lib/eligibility";
 import { mediaPath } from "@/lib/media";
-import { getCurrentSeason, getProfileById, listFranchises } from "@/lib/queries";
+import { getCurrentSeason, getPlayerDocuments, getProfileById, listFranchises } from "@/lib/queries";
 import { canInspectPlayers, getSession, isAdmin } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -71,17 +72,28 @@ export default async function PlayerProfilePage({
 
   const inspect = canInspectPlayers(user) || user?.userId === player.user_id;
   const admin = isAdmin(user);
+  const documents = admin ? await getPlayerDocuments(player.id) : null;
 
   return (
     <>
       <Nav user={user} active="players" />
       <section className="page-hero">
         <div className="wrap profile-hero">
-          <PhotoCircle
-            src={player.photo_id ? mediaPath(player.photo_id) : null}
-            name={player.full_name}
-            size="lg"
-          />
+          {user?.userId === player.user_id || admin ? (
+            <PhotoControl
+              action={uploadPlayerPhoto}
+              title={player.full_name}
+              src={player.photo_id ? mediaPath(player.photo_id) : null}
+              hidden={{ profileId: player.id }}
+              showName={false}
+            />
+          ) : (
+            <PhotoCircle
+              src={player.photo_id ? mediaPath(player.photo_id) : null}
+              name={player.full_name}
+              size="lg"
+            />
+          )}
           <div>
             <div className="eyebrow">
               {season?.name ?? "SEASON 1"} · {season ? ballLabel(season.ball_type).toUpperCase() : "DEUCE BALL"}
@@ -98,13 +110,6 @@ export default async function PlayerProfilePage({
       <section className="players-section">
         <div className="wrap profile-grid">
           <div className="profile-card">
-            {user?.userId === player.user_id || admin ? (
-              <PhotoUpload
-                action={uploadPlayerPhoto}
-                label="Photo"
-                hidden={{ profileId: player.id }}
-              />
-            ) : null}
             <dl className="profile-dl">
               <div>
                 <dt>Role</dt>
@@ -160,6 +165,7 @@ export default async function PlayerProfilePage({
               </div>
             </dl>
             <PlayerStatsDetail player={player} />
+            {admin && documents ? <DocumentReview documents={documents} /> : null}
             {admin ? <EligibilityReview player={player} /> : null}
             <Link href="/players">Back to players</Link>
           </div>

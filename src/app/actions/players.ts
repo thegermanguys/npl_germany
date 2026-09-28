@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { resolvePlayerStats, statsFromForm } from "@/lib/cricheroes";
+import { isCricHeroesUrl, resolvePlayerStats, statsFromForm, type PlayerStats } from "@/lib/cricheroes";
 import { DbNotConfiguredError } from "@/lib/db";
 import { getProfileByUserId, updatePlayerProfile } from "@/lib/queries";
 import { getSession } from "@/lib/session";
@@ -50,6 +50,9 @@ export async function updateOwnProfile(
       stats: resolved.stats,
       statsSource: resolved.source,
     });
+    revalidatePath("/account");
+    revalidatePath("/players");
+    return resolved.stats ? { stats: resolved.stats } : {};
   } catch (error) {
     if (error instanceof DbNotConfiguredError) {
       return { error: "The league database is not connected yet." };
@@ -57,8 +60,10 @@ export async function updateOwnProfile(
     console.error(error);
     return { error: "Could not save your profile." };
   }
+}
 
-  revalidatePath("/account");
-  revalidatePath("/players");
-  return {};
+export async function lookupCricHeroesStats(rawUrl: string): Promise<{ stats?: PlayerStats }> {
+  if (!isCricHeroesUrl(rawUrl)) return {};
+  const resolved = await resolvePlayerStats(rawUrl, statsFromForm(new FormData()));
+  return resolved.stats ? { stats: resolved.stats } : {};
 }

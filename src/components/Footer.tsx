@@ -34,6 +34,10 @@ export function Footer() {
         </div>
         <div className="foot-bottom">
           <span>© 2026 NPL Germany. Independent Nepali diaspora cricket league.</span>
+          <span className="foot-credit">
+            Built by{" "}
+            <a href="https://www.thegermanguy.org">The German Guy</a>
+          </span>
         </div>
       </div>
     </footer>

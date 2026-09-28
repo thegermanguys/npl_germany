@@ -131,6 +131,10 @@ export async function adminUpdatePlayer(
       stats: resolved.stats,
       statsSource: resolved.source,
     });
+    revalidatePath("/admin");
+    revalidatePath("/players");
+    revalidatePath(`/players/${profile.id}`);
+    return resolved.stats ? { stats: resolved.stats } : {};
   } catch (error) {
     if (error instanceof DbNotConfiguredError) {
       return { error: "The league database is not connected yet." };
@@ -138,11 +142,6 @@ export async function adminUpdatePlayer(
     console.error(error);
     return { error: "Could not update the player." };
   }
-
-  revalidatePath("/players");
-  revalidatePath(`/players/${profileId}`);
-  revalidatePath("/admin");
-  return {};
 }
 
 export async function adminUpdateFranchise(

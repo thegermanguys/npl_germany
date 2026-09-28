@@ -1,6 +1,6 @@
 import type { PlayerStats } from "./cricheroes";
 import { getSql } from "./db";
-import { asMediaBuffer, type MediaKind } from "./media";
+import { asMediaBuffer, bytesForDatabase, isDocumentSlot, type DocumentSlot, type MediaKind } from "./media";
 import type {
   EligibilityStatus,
   FranchiseRow,
@@ -383,7 +383,7 @@ export async function insertMediaAsset(input: {
   const sql = getSql();
   const rows = await sql`
     INSERT INTO media_assets (kind, mime_type, bytes)
-    VALUES (${input.kind}, ${input.mimeType}, ${input.bytes})
+    VALUES (${input.kind}, ${input.mimeType}, ${bytesForDatabase(input.bytes)})
     RETURNING id
   `;
   return String((rows[0] as { id: string }).id);
@@ -391,14 +391,83 @@ export async function insertMediaAsset(input: {
 
 export async function getMediaAsset(
   id: string,
-): Promise<{ mime_type: string; bytes: Buffer } | null> {
+): Promise<{ kind: string; mime_type: string; bytes: Buffer } | null> {
   const sql = getSql();
   const rows = await sql`
-    SELECT mime_type, bytes FROM media_assets WHERE id = ${id} LIMIT 1
+    SELECT kind, mime_type, bytes FROM media_assets WHERE id = ${id} LIMIT 1
   `;
-  const row = rows[0] as { mime_type: string; bytes: unknown } | undefined;
+  const row = rows[0] as { kind: string; mime_type: string; bytes: unknown } | undefined;
   if (!row) return null;
-  return { mime_type: String(row.mime_type), bytes: asMediaBuffer(row.bytes) };
+  try {
+    return { kind: String(row.kind), mime_type: String(row.mime_type), bytes: asMediaBuffer(row.bytes) };
+  } catch {
+    return null;
+  }
+}
+
+export type PlayerDocuments = {
+  passport_id: string | null;
+  residence_permit_id: string | null;
+  health_insurance_id: string | null;
+};
+
+export async function getPlayerDocuments(profileId: string): Promise<PlayerDocuments | null> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT passport_id, residence_permit_id, health_insurance_id
+    FROM player_profiles
+    WHERE id = ${profileId}
+    LIMIT 1
+  `;
+  const row = rows[0] as PlayerDocuments | undefined;
+  if (!row) return null;
+  return {
+    passport_id: row.passport_id ? String(row.passport_id) : null,
+    residence_permit_id: row.residence_permit_id ? String(row.residence_permit_id) : null,
+    health_insurance_id: row.health_insurance_id ? String(row.health_insurance_id) : null,
+  };
+}
+
+export async function findDocumentOwner(
+  mediaId: string,
+): Promise<{ profileId: string; userId: string } | null> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT id, user_id
+    FROM player_profiles
+    WHERE passport_id = ${mediaId}
+       OR residence_permit_id = ${mediaId}
+       OR health_insurance_id = ${mediaId}
+    LIMIT 1
+  `;
+  const row = rows[0] as { id: string; user_id: string } | undefined;
+  if (!row) return null;
+  return { profileId: String(row.id), userId: String(row.user_id) };
+}
+
+export async function setPlayerDocument(
+  profileId: string,
+  slot: DocumentSlot,
+  mediaId: string,
+): Promise<void> {
+  if (!isDocumentSlot(slot)) throw new Error("invalid document slot");
+  const sql = getSql();
+  const current = await getPlayerDocuments(profileId);
+  if (!current) throw new Error("player not found");
+  const previous =
+    slot === "passport"
+      ? current.passport_id
+      : slot === "residence_permit"
+        ? current.residence_permit_id
+        : current.health_insurance_id;
+  if (slot === "passport") {
+    await sql`UPDATE player_profiles SET passport_id = ${mediaId}, updated_at = now() WHERE id = ${profileId}`;
+  } else if (slot === "residence_permit") {
+    await sql`UPDATE player_profiles SET residence_permit_id = ${mediaId}, updated_at = now() WHERE id = ${profileId}`;
+  } else {
+    await sql`UPDATE player_profiles SET health_insurance_id = ${mediaId}, updated_at = now() WHERE id = ${profileId}`;
+  }
+  if (previous && previous !== mediaId) await deleteMedia(previous);
 }
 
 async function deleteMedia(id: string | null): Promise<void> {
