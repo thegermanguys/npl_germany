@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { uploadLeagueLogo } from "@/app/actions/media";
 import { Nav } from "@/components/Nav";
 import { PhotoCircle } from "@/components/PhotoCircle";
-import { PhotoUpload } from "@/components/PhotoUpload";
+import { PhotoControl } from "@/components/PhotoControl";
 import { PlayerStatsStrip } from "@/components/PlayerStats";
 import { EligibilityBadge } from "@/components/EligibilityBadge";
 import { EligibilityReview } from "@/components/EligibilityReview";
@@ -59,11 +59,14 @@ export default async function AdminPage() {
       <section className="players-section">
         <div className="wrap">
           <div className="form-card league-logo-card">
-            <h3>NPL Germany logo</h3>
-            <div className="photo-block">
-              <PhotoCircle src={logoUrl} name="NPL Germany" size="md" />
-              <PhotoUpload action={uploadLeagueLogo} name="logo" label="Logo" />
-            </div>
+            <PhotoControl
+              action={uploadLeagueLogo}
+              name="logo"
+              title="NPL Germany"
+              src={logoUrl}
+              size="md"
+              invite="Add logo"
+            />
             <p className="muted">{LEAGUE_ADMIN_EMAIL}</p>
           </div>
           <div className="admin-nav">
