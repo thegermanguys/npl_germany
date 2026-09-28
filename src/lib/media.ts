@@ -2,7 +2,7 @@ export const MEDIA_KINDS = ["player_photo", "franchise_logo", "league_logo"] as 
 export type MediaKind = (typeof MEDIA_KINDS)[number];
 
 export const ALLOWED_MEDIA_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
-export const MAX_MEDIA_BYTES = 512 * 1024;
+export const MAX_MEDIA_BYTES = 2 * 1024 * 1024;
 
 export function mediaPath(id: string): string {
   return `/api/media/${id}`;
@@ -68,7 +68,7 @@ export async function readImageFile(
   if (!file) return { ok: false, error: "Choose a file." };
   const size = "size" in file ? Number(file.size) : 0;
   if (!size) return { ok: false, error: "Choose a file." };
-  if (size > MAX_MEDIA_BYTES) return { ok: false, error: "Keep the image under 512 KB." };
+  if (size > MAX_MEDIA_BYTES) return { ok: false, error: "Keep the image under 2 MB." };
   try {
     if (typeof file.arrayBuffer !== "function") return { ok: false, error: "Choose a file." };
     const bytes = Buffer.from(await file.arrayBuffer());

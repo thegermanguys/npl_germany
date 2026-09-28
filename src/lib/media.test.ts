@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { asMediaBuffer, bytesForDatabase, isMediaId, mediaPath, readImageFile } from "./media.ts";
+import { asMediaBuffer, bytesForDatabase, isMediaId, MAX_MEDIA_BYTES, mediaPath, readImageFile } from "./media.ts";
 
 describe("mediaPath", () => {
   it("serves assets from /api/media", () => {
@@ -40,5 +40,16 @@ describe("readImageFile", () => {
     const result = await readImageFile(new File([new Uint8Array([1, 2, 3])], "p.png", { type: "image/png" }));
     assert.equal(result.ok, true);
     if (result.ok) assert.equal(result.mime, "image/png");
+  });
+  it("allows 2 MB and does not mention 512 KB", async () => {
+    assert.equal(MAX_MEDIA_BYTES, 2 * 1024 * 1024);
+    const tooBig = await readImageFile(
+      new File([new Uint8Array(MAX_MEDIA_BYTES + 1)], "big.png", { type: "image/png" }),
+    );
+    assert.equal(tooBig.ok, false);
+    if (!tooBig.ok) {
+      assert.equal(tooBig.error, "Keep the image under 2 MB.");
+      assert.equal(tooBig.error.includes("512"), false);
+    }
   });
 });
