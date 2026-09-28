@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { forbiddenForPath } from "@/lib/access";
 import { readSessionToken, SESSION_COOKIE } from "@/lib/token";
 
 export async function middleware(request: NextRequest) {
@@ -7,10 +8,11 @@ export async function middleware(request: NextRequest) {
   const user = token && secret ? await readSessionToken(token) : null;
   const path = request.nextUrl.pathname;
 
-  if (path.startsWith("/admin")) {
-    if (user?.role !== "admin") {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
+  if (forbiddenForPath(path, user?.role)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/403";
+    url.search = "";
+    return NextResponse.rewrite(url, { status: 403 });
   }
 
   if (path.startsWith("/account") && !user) {
@@ -21,5 +23,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin", "/admin/:path*", "/account", "/account/:path*"],
+  matcher: ["/admin", "/admin/:path*", "/owner", "/owner/:path*", "/account", "/account/:path*"],
 };

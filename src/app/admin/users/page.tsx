@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
   const user = await getSession();
-  if (!isAdmin(user)) redirect("/login");
+  if (!isAdmin(user)) redirect("/403");
   if (!isDatabaseConfigured()) redirect("/admin");
 
   const [users, franchises] = await Promise.all([listUsers(), listFranchises()]);

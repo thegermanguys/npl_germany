@@ -60,6 +60,8 @@ export type FranchiseRow = {
   color_key: string;
   sort_order: number;
   logo_id: string | null;
+  owner_user_id: string | null;
+  created_at: string;
 };
 
 export type SeasonRow = {

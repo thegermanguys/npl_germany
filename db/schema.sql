@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   email text NOT NULL UNIQUE,
   password_hash text NOT NULL,
-  role text NOT NULL CHECK (role IN ('player', 'franchise_owner', 'admin')),
+  role text NOT NULL DEFAULT 'player' CHECK (role IN ('player', 'franchise_owner', 'admin')),
   display_name text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -22,7 +22,9 @@ CREATE TABLE IF NOT EXISTS franchises (
   tagline text NOT NULL DEFAULT '',
   description text NOT NULL DEFAULT '',
   color_key text NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
+  sort_order int NOT NULL DEFAULT 0,
+  owner_user_id uuid REFERENCES users(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS seasons (
@@ -123,6 +125,13 @@ ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS passport_id uuid REFERENCES
 ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS residence_permit_id uuid REFERENCES media_assets(id) ON DELETE SET NULL;
 ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS health_insurance_id uuid REFERENCES media_assets(id) ON DELETE SET NULL;
 ALTER TABLE franchises ADD COLUMN IF NOT EXISTS logo_id uuid REFERENCES media_assets(id) ON DELETE SET NULL;
+ALTER TABLE franchises ADD COLUMN IF NOT EXISTS owner_user_id uuid REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE franchises ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE users ALTER COLUMN role SET DEFAULT 'player';
+
+CREATE UNIQUE INDEX IF NOT EXISTS franchises_one_owner
+  ON franchises (owner_user_id)
+  WHERE owner_user_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS league_settings (
   id text PRIMARY KEY,

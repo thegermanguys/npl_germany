@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminFranchisesPage() {
   const user = await getSession();
-  if (!isAdmin(user)) redirect("/login");
+  if (!isAdmin(user)) redirect("/403");
   if (!isDatabaseConfigured()) redirect("/admin");
 
   const franchises = await listFranchises();

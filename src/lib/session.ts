@@ -36,3 +36,7 @@ export function canInspectPlayers(user: SessionUser | null): boolean {
 export function isAdmin(user: SessionUser | null): boolean {
   return user?.role === "admin";
 }
+
+export function isFranchiseOwner(user: SessionUser | null): boolean {
+  return user?.role === "franchise_owner";
+}

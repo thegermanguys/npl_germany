@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const user = await getSession();
-  if (!user || !isAdmin(user)) redirect("/login");
+  if (!user || !isAdmin(user)) redirect("/403");
 
   if (!isDatabaseConfigured()) {
     return (

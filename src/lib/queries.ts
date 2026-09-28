@@ -137,10 +137,11 @@ export async function listUsers(): Promise<Array<UserRow & { franchise_name: str
   const sql = getSql();
   const rows = await sql`
     SELECT u.id, u.email, u.password_hash, u.role, u.display_name, u.created_at::text,
-           f.full_name AS franchise_name
+           COALESCE(owned.full_name, member.full_name) AS franchise_name
     FROM users u
+    LEFT JOIN franchises owned ON owned.owner_user_id = u.id
     LEFT JOIN franchise_memberships fm ON fm.user_id = u.id
-    LEFT JOIN franchises f ON f.id = fm.franchise_id
+    LEFT JOIN franchises member ON member.id = fm.franchise_id
     ORDER BY u.role, u.display_name
   `;
   return rows as Array<UserRow & { franchise_name: string | null }>;
@@ -203,25 +204,44 @@ export async function invalidateUserResetTokens(userId: string): Promise<void> {
   `;
 }
 
+function mapFranchise(row: Record<string, unknown>): FranchiseRow {
+  return {
+    id: String(row.id),
+    slug: String(row.slug),
+    city: String(row.city),
+    name: String(row.name),
+    full_name: String(row.full_name),
+    tagline: String(row.tagline ?? ""),
+    description: String(row.description ?? ""),
+    color_key: String(row.color_key),
+    sort_order: Number(row.sort_order ?? 0),
+    logo_id: row.logo_id ? String(row.logo_id) : null,
+    owner_user_id: row.owner_user_id ? String(row.owner_user_id) : null,
+    created_at: String(row.created_at ?? ""),
+  };
+}
+
 export async function listFranchises(): Promise<FranchiseRow[]> {
   const sql = getSql();
   const rows = await sql`
-    SELECT id, slug, city, name, full_name, tagline, description, color_key, sort_order, logo_id
+    SELECT id, slug, city, name, full_name, tagline, description, color_key, sort_order,
+           logo_id, owner_user_id, created_at::text
     FROM franchises
     ORDER BY sort_order, city
   `;
-  return rows as FranchiseRow[];
+  return rows.map((row) => mapFranchise(row as Record<string, unknown>));
 }
 
 export async function getFranchise(id: string): Promise<FranchiseRow | null> {
   const sql = getSql();
   const rows = await sql`
-    SELECT id, slug, city, name, full_name, tagline, description, color_key, sort_order, logo_id
+    SELECT id, slug, city, name, full_name, tagline, description, color_key, sort_order,
+           logo_id, owner_user_id, created_at::text
     FROM franchises
     WHERE id = ${id}
     LIMIT 1
   `;
-  return (rows[0] as FranchiseRow | undefined) ?? null;
+  return rows[0] ? mapFranchise(rows[0] as Record<string, unknown>) : null;
 }
 
 export async function updateFranchise(
@@ -238,6 +258,12 @@ export async function updateFranchise(
 
 export async function assignFranchiseOwner(userId: string, franchiseId: string): Promise<void> {
   const sql = getSql();
+  await sql`UPDATE franchises SET owner_user_id = NULL WHERE owner_user_id = ${userId}`;
+  await sql`UPDATE franchises SET owner_user_id = ${userId} WHERE id = ${franchiseId}`;
+  await sql`
+    DELETE FROM franchise_memberships
+    WHERE user_id = ${userId} OR franchise_id = ${franchiseId}
+  `;
   await sql`
     INSERT INTO franchise_memberships (user_id, franchise_id)
     VALUES (${userId}, ${franchiseId})

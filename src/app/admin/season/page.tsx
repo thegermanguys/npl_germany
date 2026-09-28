@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminSeasonPage() {
   const user = await getSession();
-  if (!isAdmin(user)) redirect("/login");
+  if (!isAdmin(user)) redirect("/403");
   if (!isDatabaseConfigured()) redirect("/admin");
 
   const season = await getCurrentSeason();

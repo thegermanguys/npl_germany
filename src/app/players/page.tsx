@@ -12,9 +12,10 @@ export const metadata: Metadata = { title: "Players" };
 export const dynamic = "force-dynamic";
 
 export default async function PlayersPage() {
-  const { user, configured, season, players } = await loadPortal();
+  const { user, configured, season, players, franchises } = await loadPortal();
   const inspect = canInspectPlayers(user);
   const visible = playersForViewer(players, user);
+  const franchiseCities = franchises.map((franchise) => franchise.city);
 
   return (
     <>
@@ -45,6 +46,7 @@ export default async function PlayersPage() {
               players={visible}
               inspect={inspect}
               showEligibility={user?.role === "admin"}
+              franchiseCities={franchiseCities}
             />
           )}
         </div>
