@@ -3,13 +3,14 @@
 import { revalidatePath } from "next/cache";
 import type { ActionState } from "./auth";
 import { DbNotConfiguredError } from "@/lib/db";
-import { readImageFile } from "@/lib/media";
+import { DOCUMENT_SLOTS, isDocumentSlot, readDocumentFile, readImageFile } from "@/lib/media";
 import {
   getProfileById,
   getProfileByUserId,
   insertMediaAsset,
   setFranchiseLogo,
   setLeagueLogo,
+  setPlayerDocument,
   setPlayerPhoto,
 } from "@/lib/queries";
 import { getSession, isAdmin } from "@/lib/session";
@@ -71,6 +72,40 @@ export async function uploadOwnPhoto(
     return await savePlayerPhoto(profile.id, formData.get("photo") as File | null);
   } catch (error) {
     return fail(error, "Could not save the photo.");
+  }
+}
+
+export async function uploadOwnDocument(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== "player") {
+      return { error: "Sign in as a player to upload a file." };
+    }
+    const profile = await getProfileByUserId(session.userId);
+    if (!profile) return { error: "No player profile found." };
+
+    const slot = String(formData.get("slot") ?? "");
+    if (!isDocumentSlot(slot)) return { error: "Choose a file." };
+    const parsed = await readDocumentFile(formData.get("document") as File | null);
+    if (!parsed.ok) return { error: parsed.error };
+
+    const kind = DOCUMENT_SLOTS.find((item) => item.slot === slot)?.kind;
+    if (!kind) return { error: "Choose a file." };
+    const mediaId = await insertMediaAsset({
+      kind,
+      mimeType: parsed.mime,
+      bytes: parsed.bytes,
+    });
+    await setPlayerDocument(profile.id, slot, mediaId);
+    revalidatePath("/account");
+    revalidatePath(`/players/${profile.id}`);
+    revalidatePath("/admin");
+    return {};
+  } catch (error) {
+    return fail(error, "Could not save the file.");
   }
 }
 

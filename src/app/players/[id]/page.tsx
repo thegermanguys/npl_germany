@@ -7,13 +7,14 @@ import { EligibilityBadge } from "@/components/EligibilityBadge";
 import { EligibilityReview } from "@/components/EligibilityReview";
 import { Nav } from "@/components/Nav";
 import { PhotoCircle } from "@/components/PhotoCircle";
+import { DocumentReview } from "@/components/DocumentSlots";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { PlayerStatsDetail } from "@/components/PlayerStats";
 import { ProfileForm } from "@/components/ProfileForm";
 import { DbNotConfiguredError, ballLabel, isDatabaseConfigured } from "@/lib/db";
 import { canViewPlayer } from "@/lib/eligibility";
 import { mediaPath } from "@/lib/media";
-import { getCurrentSeason, getProfileById, listFranchises } from "@/lib/queries";
+import { getCurrentSeason, getPlayerDocuments, getProfileById, listFranchises } from "@/lib/queries";
 import { canInspectPlayers, getSession, isAdmin } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -71,6 +72,7 @@ export default async function PlayerProfilePage({
 
   const inspect = canInspectPlayers(user) || user?.userId === player.user_id;
   const admin = isAdmin(user);
+  const documents = admin ? await getPlayerDocuments(player.id) : null;
 
   return (
     <>
@@ -160,6 +162,7 @@ export default async function PlayerProfilePage({
               </div>
             </dl>
             <PlayerStatsDetail player={player} />
+            {admin && documents ? <DocumentReview documents={documents} /> : null}
             {admin ? <EligibilityReview player={player} /> : null}
             <Link href="/players">Back to players</Link>
           </div>

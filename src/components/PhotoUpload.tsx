@@ -28,6 +28,7 @@ export function PhotoUpload({
         {label}
         <input type="file" name={name} accept="image/jpeg,image/png,image/webp" required />
       </label>
+      <p className="field-hint">JPEG, PNG, or WebP. 2 MB.</p>
       <button type="submit" className="btn btn-navy btn-small" disabled={pending}>
         {pending ? "Saving…" : "Save"}
       </button>
