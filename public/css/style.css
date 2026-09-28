@@ -443,14 +443,15 @@ tr.not-buyable{opacity:0.55;}
 }
 .photo-control{margin-bottom:20px;}
 .photo-control-circle{
-  position:relative;display:block;border-radius:50%;flex-shrink:0;cursor:pointer;
+  position:relative;display:block;border-radius:50%;flex-shrink:0;cursor:pointer;overflow:hidden;
 }
 .photo-control-input{
-  position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border-radius:50%;
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
 }
 .photo-control-overlay{
   position:absolute;inset:0;border-radius:50%;
-  background:rgba(11,28,51,0.62);color:var(--white);
+  background:rgba(11,28,51,0.45);color:var(--white);
   display:flex;align-items:center;justify-content:center;text-align:center;
   font-size:12px;font-weight:600;letter-spacing:0.02em;padding:8px;
   opacity:0;transition:opacity .15s;pointer-events:none;
