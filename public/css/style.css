@@ -450,11 +450,13 @@ tr.not-buyable{opacity:0.55;}
   padding:18px 20px;margin-bottom:20px;display:flex;flex-direction:column;gap:14px;
 }
 .document-slot{
-  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;align-items:end;
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px;align-items:end;
 }
-.document-slot label{font-size:12.5px;font-weight:600;color:var(--navy);display:flex;flex-direction:column;gap:6px;}
+.document-slot > input[type="hidden"]{display:none;}
+.document-slot label{grid-column:1;grid-row:1;font-size:12.5px;font-weight:600;color:var(--navy);display:flex;flex-direction:column;gap:6px;}
+.document-slot button{grid-column:2;grid-row:1;justify-self:end;}
 .document-slot input[type="file"]{font:inherit;font-size:13px;}
-.document-slot-meta{grid-column:1 / -1;}
+.document-slot-meta{grid-column:1 / -1;grid-row:2;}
 .document-slot .form-msg{margin-top:6px;}
 .document-review{margin:20px 0;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px;}
 .document-review-row{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13.5px;font-weight:600;color:var(--navy);}

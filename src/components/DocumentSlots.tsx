@@ -58,6 +58,9 @@ function DocumentSlotRow({
           required
         />
       </label>
+      <button type="submit" className="btn btn-navy btn-small" disabled={pending}>
+        {pending ? "Saving…" : "Save"}
+      </button>
       <div className="document-slot-meta">
         {mediaId ? (
           <a href={documentPath(mediaId)} target="_blank" rel="noreferrer">
@@ -68,9 +71,6 @@ function DocumentSlotRow({
         )}
         {state.error ? <div className="form-msg err">{state.error}</div> : null}
       </div>
-      <button type="submit" className="btn btn-navy btn-small" disabled={pending}>
-        {pending ? "Saving…" : "Save"}
-      </button>
     </form>
   );
 }
