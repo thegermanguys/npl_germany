@@ -74,20 +74,32 @@ describe("Awanish sample card fallback", () => {
       assert.equal(fetched.stats.matches, SAMPLE_CARD_STATS.matches);
       assert.equal(fetched.stats.runs, SAMPLE_CARD_STATS.runs);
       assert.equal(fetched.stats.wickets, SAMPLE_CARD_STATS.wickets);
+      assert.equal(fetched.stats.battingAvg, 16.88);
+      assert.equal(fetched.stats.strikeRate, 114.99);
+      assert.equal(fetched.stats.economy, 9.84);
+      assert.equal(fetched.stats.highScore, 55);
+      assert.equal(fetched.stats.bestBowling, "3/16");
     }
   });
   it("fills the account and auction rows when the URL is saved without stats", () => {
     const filled = applyKnownCardToPlayer({
       cricheroes_url: SAMPLE_SHARE_URL,
-      stats_matches: null,
-      stats_runs: null,
-      stats_wickets: null,
-      stats_source: "none" as const,
+      stats_matches: 38,
+      stats_runs: 422,
+      stats_wickets: 21,
+      stats_batting_avg: null,
+      stats_strike_rate: null,
+      stats_economy: null,
+      stats_high_score: null,
+      stats_best_bowling: null,
+      stats_source: "cricheroes" as const,
     });
     assert.equal(filled.stats_matches, 38);
-    assert.equal(filled.stats_runs, 422);
-    assert.equal(filled.stats_wickets, 21);
-    assert.equal(filled.stats_source, "cricheroes");
+    assert.equal(filled.stats_batting_avg, 16.88);
+    assert.equal(filled.stats_strike_rate, 114.99);
+    assert.equal(filled.stats_economy, 9.84);
+    assert.equal(filled.stats_high_score, 55);
+    assert.equal(filled.stats_best_bowling, "3/16");
   });
   it("resolves the share link to the locked card without typed numbers", async () => {
     const resolved = await resolvePlayerStats(SAMPLE_SHARE_URL, {
@@ -104,6 +116,11 @@ describe("Awanish sample card fallback", () => {
     assert.equal(resolved.stats?.matches, 38);
     assert.equal(resolved.stats?.runs, 422);
     assert.equal(resolved.stats?.wickets, 21);
+    assert.equal(resolved.stats?.battingAvg, 16.88);
+    assert.equal(resolved.stats?.strikeRate, 114.99);
+    assert.equal(resolved.stats?.economy, 9.84);
+    assert.equal(resolved.stats?.highScore, 55);
+    assert.equal(resolved.stats?.bestBowling, "3/16");
   });
 });
 
@@ -120,6 +137,24 @@ describe("parseCricHeroesStats — Awanish card", () => {
     assert.equal(stats?.matches, 38);
     assert.equal(stats?.runs, 422);
     assert.equal(stats?.wickets, 21);
+  });
+
+  it("reads batting and bowling extras the way the Awanish stats tab shows them", () => {
+    const html = `
+      <div>38</div><div>Matches</div>
+      <div>422</div><div>Runs</div>
+      <div>55</div><div>Highest</div>
+      <div>16.88</div><div>Avg</div>
+      <div>114.99</div><div>SR</div>
+      <div>9.84</div><div>Economy</div>
+      <div>Best bowling</div><div>3/16</div>
+    `;
+    const stats = parseCricHeroesStats(html);
+    assert.equal(stats?.highScore, 55);
+    assert.equal(stats?.battingAvg, 16.88);
+    assert.equal(stats?.strikeRate, 114.99);
+    assert.equal(stats?.economy, 9.84);
+    assert.equal(stats?.bestBowling, "3/16");
   });
 });
 
