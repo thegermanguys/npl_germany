@@ -444,52 +444,58 @@ tr.not-buyable{opacity:0.55;}
 .photo-md.photo-fallback{font-size:28px;}
 .photo-lg.photo-fallback{font-size:40px;}
 .photo-block,.fr-logo-admin,.photo-control{
-  display:flex;align-items:center;gap:18px;margin-bottom:20px;
+  display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:18px;margin-bottom:20px;
 }
-.photo-control{margin-bottom:20px;}
+.photo-control{margin-bottom:24px;}
 .photo-control-circle{
-  position:relative;display:block;border-radius:50%;flex-shrink:0;cursor:pointer;overflow:hidden;
+  position:relative;display:block;border-radius:50%;flex-shrink:0;overflow:hidden;
 }
-.photo-control-input{
-  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
-  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+.sr-file{
+  display:none !important;
+}
+.photo-control-hit{
+  display:block;padding:0;border:0;background:transparent;cursor:pointer;border-radius:50%;
 }
 .photo-control-overlay{
-  position:absolute;inset:0;border-radius:50%;
-  background:rgba(11,28,51,0.45);color:var(--white);
+  position:absolute;inset:0;border-radius:50%;border:0;cursor:pointer;
+  background:rgba(11,28,51,0.5);color:var(--white);
   display:flex;align-items:center;justify-content:center;text-align:center;
-  font-size:12px;font-weight:600;letter-spacing:0.02em;padding:8px;
-  opacity:0;transition:opacity .15s;pointer-events:none;
+  font:inherit;font-size:12px;font-weight:600;letter-spacing:0.02em;padding:8px;
 }
-.photo-control-circle:hover .photo-control-overlay,
-.photo-control-circle.drag .photo-control-overlay,
-.photo-control-circle.pending .photo-control-overlay,
-.photo-control-circle.empty .photo-control-overlay{opacity:1;}
 .photo-control-name{
   margin:0;font-size:20px;font-weight:700;color:var(--navy);line-height:1.2;
+}
+.photo-control-line{
+  margin:6px 0 0;font-size:14px;font-weight:500;color:var(--muted);line-height:1.3;
 }
 .photo-control-meta .form-msg{margin-top:8px;}
 .field-hint{margin:6px 0 0;font-size:12px;color:var(--muted);font-weight:500;}
 .profile-hero .photo-control{margin:0;}
 .profile-hero .photo-control-name{color:var(--white);}
+.profile-hero .photo-control-line{color:rgba(255,255,255,0.75);}
 .profile-hero .field-hint{color:rgba(255,255,255,0.7);}
 .document-slots{
   background:var(--white);border:1px solid var(--line);border-radius:10px;
-  padding:18px 20px;margin-bottom:20px;display:flex;flex-direction:column;gap:14px;
+  padding:18px 20px;margin:28px 0 20px;display:flex;flex-direction:column;gap:10px;
 }
 .document-slot{
-  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px;align-items:end;
+  display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px 14px;align-items:center;
+  position:relative;
 }
-.document-slot > input[type="hidden"]{display:none;}
-.document-slot label{grid-column:1;grid-row:1;font-size:12.5px;font-weight:600;color:var(--navy);display:flex;flex-direction:column;gap:6px;}
-.document-slot button{grid-column:2;grid-row:1;justify-self:end;}
-.document-slot input[type="file"]{font:inherit;font-size:13px;}
-.document-slot-meta{grid-column:1 / -1;grid-row:2;}
-.document-slot .form-msg{margin-top:6px;}
+.document-slot > input[type="hidden"],.document-slot > .sr-file{display:none;}
+.document-slot-label{font-size:12.5px;font-weight:600;color:var(--navy);}
+.document-slot-meta{font-size:12.5px;}
+.document-slot-meta .muted{margin:0;}
+.document-slot-action{
+  border:0;background:none;padding:0;font:inherit;font-size:12.5px;font-weight:600;
+  color:var(--crimson);cursor:pointer;
+}
+.document-slot-action:disabled{opacity:0.6;cursor:wait;}
+.document-slot .form-msg{grid-column:1 / -1;}
 .document-review{margin:20px 0;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px;}
 .document-review-row{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13.5px;font-weight:600;color:var(--navy);}
 @media (max-width:700px){
-  .document-slot{grid-template-columns:1fr;}
+  .document-slot{grid-template-columns:1fr auto;}
 }
 .name-with-photo{display:flex;align-items:center;gap:12px;}
 .profile-hero{display:flex;align-items:center;gap:28px;}
@@ -497,7 +503,7 @@ tr.not-buyable{opacity:0.55;}
 .profile-hero .lede{margin-top:10px;}
 .league-logo-card{margin-bottom:28px;max-width:520px;}
 @media (max-width:700px){
-  .profile-hero,.photo-block,.fr-logo-admin,.photo-control{flex-direction:column;align-items:flex-start;}
+  .profile-hero,.photo-block,.fr-logo-admin{flex-direction:column;align-items:flex-start;}
 }
 
 .cricket-icon{width:22px;height:22px;display:block;color:currentColor;}
