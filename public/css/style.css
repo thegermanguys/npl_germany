@@ -552,6 +552,12 @@ tr.not-buyable{opacity:0.55;}
 .purse-bar{height:6px;background:var(--line);border-radius:99px;margin-top:8px;overflow:hidden;}
 .purse-bar span{display:block;height:100%;background:var(--navy);border-radius:99px;}
 .purse-bar span.over{background:var(--crimson);}
+.page-hero .purse-meter{max-width:280px;margin-top:14px;}
+.page-hero .purse-row{color:rgba(255,255,255,0.72);}
+.page-hero .purse-row strong{color:var(--white);}
+.page-hero .purse-bar{background:rgba(255,255,255,0.2);}
+.page-hero .purse-bar span{background:var(--gold);}
+.page-hero .purse-bar span.over{background:var(--crimson);}
 .purse-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px;}
 .squad-group{margin:32px 0;}
 .squad-group h2{font-size:22px;color:var(--navy);margin-bottom:16px;}
