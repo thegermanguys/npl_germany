@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { forbidden } from "next/navigation";
 import { uploadLeagueLogo } from "@/app/actions/media";
 import { Nav } from "@/components/Nav";
 import { PhotoCircle } from "@/components/PhotoCircle";
@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const user = await getSession();
-  if (!user || !isAdmin(user)) redirect("/403");
+  if (!user || !isAdmin(user)) forbidden();
 
   if (!isDatabaseConfigured()) {
     return (

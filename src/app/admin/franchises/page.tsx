@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { forbidden, redirect } from "next/navigation";
 import { uploadFranchiseLogo } from "@/app/actions/media";
 import { FranchiseEditForm } from "@/components/AdminForms";
 import { Nav } from "@/components/Nav";
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminFranchisesPage() {
   const user = await getSession();
-  if (!isAdmin(user)) redirect("/403");
+  if (!isAdmin(user)) forbidden();
   if (!isDatabaseConfigured()) redirect("/admin");
 
   const franchises = await listFranchises();
