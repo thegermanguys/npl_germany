@@ -1,4 +1,4 @@
-import type { PlayerStats } from "./cricheroes";
+import { applyKnownCardToPlayer, type PlayerStats } from "./cricheroes";
 import { getSql } from "./db";
 import { asMediaBuffer, bytesForDatabase, isDocumentSlot, type DocumentSlot, type MediaKind } from "./media";
 import type {
@@ -24,7 +24,7 @@ function asBool(value: unknown): boolean {
 }
 
 function mapPlayer(row: Record<string, unknown>): PlayerListItem {
-  return {
+  return applyKnownCardToPlayer({
     id: String(row.id),
     user_id: String(row.user_id),
     season_id: String(row.season_id),
@@ -57,7 +57,7 @@ function mapPlayer(row: Record<string, unknown>): PlayerListItem {
     email: String(row.email ?? ""),
     franchise_name: (row.franchise_name as string | null) ?? null,
     franchise_color: (row.franchise_color as string | null) ?? null,
-  };
+  });
 }
 
 export async function getCurrentSeason(): Promise<SeasonRow | null> {

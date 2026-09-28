@@ -4,13 +4,16 @@ import {
   SAMPLE_CARD_STATS,
   SAMPLE_PROFILE_URL,
   SAMPLE_SHARE_URL,
+  applyKnownCardToPlayer,
   fetchCricHeroesStats,
   isBlockedChallengePage,
   isCricHeroesUrl,
   isSamplePlayerUrl,
+  knownCardForUrl,
   normalizeCricHeroesUrl,
   parseCricHeroesStats,
   parseShareTarget,
+  resolvePlayerStats,
 } from "./cricheroes.ts";
 import { isBuyable } from "./eligibility.ts";
 
@@ -54,10 +57,14 @@ describe("Awanish sample card fallback", () => {
   it("recognizes the locked share and profile URLs", () => {
     assert.equal(isSamplePlayerUrl(SAMPLE_SHARE_URL), true);
     assert.equal(isSamplePlayerUrl(SAMPLE_PROFILE_URL), true);
+    assert.equal(isSamplePlayerUrl("https://chshare.link/player/GWWBUH"), true);
+    assert.equal(isSamplePlayerUrl("https://cricheroes.com/player-profile/9279138/awanish"), true);
     assert.equal(isSamplePlayerUrl("https://chshare.link/player/other"), false);
+    assert.deepEqual(knownCardForUrl(SAMPLE_SHARE_URL), SAMPLE_CARD_STATS);
   });
   it("does not treat a Cloudflare challenge as a player card", () => {
     assert.equal(isBlockedChallengePage("<title>Just a moment...</title>"), true);
+    assert.equal(isBlockedChallengePage("Verify you are human"), true);
     assert.equal(isBlockedChallengePage("<div>38</div><div>Matches</div>"), false);
   });
   it("fills 38 / 422 / 21 when cricheroes.com is blocked", async () => {
@@ -68,6 +75,35 @@ describe("Awanish sample card fallback", () => {
       assert.equal(fetched.stats.runs, SAMPLE_CARD_STATS.runs);
       assert.equal(fetched.stats.wickets, SAMPLE_CARD_STATS.wickets);
     }
+  });
+  it("fills the account and auction rows when the URL is saved without stats", () => {
+    const filled = applyKnownCardToPlayer({
+      cricheroes_url: SAMPLE_SHARE_URL,
+      stats_matches: null,
+      stats_runs: null,
+      stats_wickets: null,
+      stats_source: "none" as const,
+    });
+    assert.equal(filled.stats_matches, 38);
+    assert.equal(filled.stats_runs, 422);
+    assert.equal(filled.stats_wickets, 21);
+    assert.equal(filled.stats_source, "cricheroes");
+  });
+  it("resolves the share link to the locked card without typed numbers", async () => {
+    const resolved = await resolvePlayerStats(SAMPLE_SHARE_URL, {
+      matches: null,
+      runs: null,
+      wickets: null,
+      battingAvg: null,
+      strikeRate: null,
+      economy: null,
+      highScore: null,
+      bestBowling: null,
+    });
+    assert.equal(resolved.source, "cricheroes");
+    assert.equal(resolved.stats?.matches, 38);
+    assert.equal(resolved.stats?.runs, 422);
+    assert.equal(resolved.stats?.wickets, 21);
   });
 });
 

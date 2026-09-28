@@ -45,6 +45,10 @@ export function ProfileForm({
     if (state.stats) setStats(statsToFields(player, state.stats));
   }, [player, state.stats]);
 
+  useEffect(() => {
+    if (player.cricheroes_url) void fillFromUrl(player.cricheroes_url);
+  }, [player.cricheroes_url]);
+
   async function fillFromUrl(raw: string) {
     const result = await lookupCricHeroesStats(raw);
     if (result.stats) setStats(statsToFields(player, result.stats));

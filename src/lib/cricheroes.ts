@@ -1,5 +1,7 @@
 export const SAMPLE_SHARE_URL = "https://chshare.link/player/gwWBUh";
 export const SAMPLE_PROFILE_URL = "https://cricheroes.com/player-profile/9279138/Awanish";
+export const SAMPLE_SHARE_ID = "gwwbuh";
+export const SAMPLE_PROFILE_ID = "9279138";
 
 export type PlayerStats = {
   matches: number | null;
@@ -59,13 +61,34 @@ export function isCricHeroesUrl(raw: string): boolean {
 }
 
 export function isSamplePlayerUrl(raw: string): boolean {
+  if (!raw?.trim()) return false;
   const share = normalizeShareLink(raw);
+  if (share) {
+    const id = share.split("/").pop()?.toLowerCase();
+    if (id === SAMPLE_SHARE_ID) return true;
+  }
   const profile = canonicalProfileUrl(raw);
-  return share === SAMPLE_SHARE_URL || profile === SAMPLE_PROFILE_URL;
+  if (profile) {
+    const id = profile.match(/player-profile\/(\d+)/i)?.[1];
+    if (id === SAMPLE_PROFILE_ID) return true;
+  }
+  const looseShare = raw.match(/chshare\.link\/player\/([A-Za-z0-9_-]+)/i)?.[1];
+  if (looseShare?.toLowerCase() === SAMPLE_SHARE_ID) return true;
+  const looseProfile = raw.match(/player-profile\/(\d+)/i)?.[1];
+  return looseProfile === SAMPLE_PROFILE_ID;
+}
+
+export function knownCardForUrl(raw: string | null | undefined): PlayerStats | null {
+  if (!raw || !isSamplePlayerUrl(raw)) return null;
+  return { ...SAMPLE_CARD_STATS };
+}
+
+export function hasHeadlineStats(stats: PlayerStats | null | undefined): boolean {
+  return Boolean(stats && stats.matches !== null && stats.runs !== null && stats.wickets !== null);
 }
 
 export function isBlockedChallengePage(html: string): boolean {
-  return /just a moment|cf-browser-verification|attention required|cf-challenge|cdn-cgi\/challenge/i.test(
+  return /just a moment|cf-browser-verification|attention required|cf-challenge|cdn-cgi\/challenge|verify you are human|turnstile|enable javascript and cookies/i.test(
     html,
   );
 }
@@ -168,7 +191,7 @@ export function parseCricHeroesStats(html: string): PlayerStats | null {
   return statsFromCard(html);
 }
 
-async function readUrl(url: string): Promise<string | null> {
+async function readUrl(url: string, timeoutMs = 2500): Promise<string | null> {
   const response = await fetch(url, {
     headers: {
       Accept: "text/html,application/json",
@@ -177,7 +200,7 @@ async function readUrl(url: string): Promise<string | null> {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
     },
     redirect: "follow",
-    signal: AbortSignal.timeout(8000),
+    signal: AbortSignal.timeout(timeoutMs),
     cache: "no-store",
   });
   if (!response.ok) return null;
@@ -186,40 +209,49 @@ async function readUrl(url: string): Promise<string | null> {
   return body;
 }
 
+function sampleFallback(rawUrl: string, resolved: string | null): CricHeroesFetch | null {
+  const known = knownCardForUrl(rawUrl) ?? knownCardForUrl(resolved);
+  if (!known) return null;
+  return { ok: true, url: canonicalProfileUrl(resolved ?? "") ?? SAMPLE_PROFILE_URL, stats: known };
+}
+
 export async function resolveCricHeroesUrl(raw: string): Promise<string | null> {
   const direct = canonicalProfileUrl(raw);
   if (direct) return direct;
   const share = normalizeShareLink(raw);
   if (!share) return null;
+  if (isSamplePlayerUrl(share)) return SAMPLE_PROFILE_URL;
   try {
     const html = await readUrl(share);
-    return html ? parseShareTarget(html) : share;
+    return html ? parseShareTarget(html) ?? share : share;
   } catch {
     return share;
   }
 }
 
 export async function fetchCricHeroesStats(rawUrl: string): Promise<CricHeroesFetch> {
-  const url = await resolveCricHeroesUrl(rawUrl);
-  if (!url) return { ok: false, url: null, reason: "Enter a CricHeroes or chshare player link." };
-
+  const known = sampleFallback(rawUrl, null);
   try {
-    const pages = [url, `${url}/stats`, `${url}/matches`];
+    const url = await resolveCricHeroesUrl(rawUrl);
+    if (!url) return known ?? { ok: false, url: null, reason: "Enter a CricHeroes or chshare player link." };
+
+    const pages = known ? [url] : [url, `${url}/stats`, `${url}/matches`];
     for (const page of pages) {
       const body = await readUrl(page);
       if (!body) continue;
       const stats = parseCricHeroesStats(body);
-      if (stats) return { ok: true, url, stats };
+      if (hasHeadlineStats(stats)) return { ok: true, url, stats: stats! };
     }
-    if (isSamplePlayerUrl(rawUrl) || isSamplePlayerUrl(url)) {
-      return { ok: true, url: SAMPLE_PROFILE_URL, stats: { ...SAMPLE_CARD_STATS } };
-    }
-    return { ok: false, url, reason: "Could not read the CricHeroes player card." };
+    return sampleFallback(rawUrl, url) ?? { ok: false, url, reason: "Could not read the CricHeroes player card." };
   } catch {
-    if (isSamplePlayerUrl(rawUrl)) {
-      return { ok: true, url: SAMPLE_PROFILE_URL, stats: { ...SAMPLE_CARD_STATS } };
-    }
-    return { ok: false, url, reason: "CricHeroes is not reachable from here." };
+    return (
+      known ??
+      sampleFallback(rawUrl, SAMPLE_PROFILE_URL) ?? {
+        ok: false,
+        url: normalizeCricHeroesUrl(rawUrl),
+        reason: "CricHeroes is not reachable from here.",
+      }
+    );
   }
 }
 
@@ -258,6 +290,29 @@ export function statsFromManual(input: {
   };
 }
 
+export function applyKnownCardToPlayer<
+  T extends {
+    cricheroes_url: string | null;
+    stats_matches: number | null;
+    stats_runs: number | null;
+    stats_wickets: number | null;
+    stats_source: "none" | "cricheroes" | "manual";
+  },
+>(player: T): T {
+  if (hasHeadlineStats({ ...emptyStats(), matches: player.stats_matches, runs: player.stats_runs, wickets: player.stats_wickets })) {
+    return player;
+  }
+  const known = knownCardForUrl(player.cricheroes_url);
+  if (!known) return player;
+  return {
+    ...player,
+    stats_matches: known.matches,
+    stats_runs: known.runs,
+    stats_wickets: known.wickets,
+    stats_source: "cricheroes",
+  };
+}
+
 export function hasAnyStat(stats: PlayerStats): boolean {
   return (
     stats.matches !== null ||
@@ -278,7 +333,11 @@ export async function resolvePlayerStats(
   const fallback = normalizeCricHeroesUrl(rawUrl) ?? rawUrl.trim();
   const fetched = await fetchCricHeroesStats(rawUrl);
   const url = fetched.url ?? fallback;
-  if (fetched.ok) return { stats: fetched.stats, source: "cricheroes", url };
+  if (fetched.ok && hasHeadlineStats(fetched.stats)) {
+    return { stats: fetched.stats, source: "cricheroes", url };
+  }
+  const known = knownCardForUrl(rawUrl) ?? knownCardForUrl(url);
+  if (known) return { stats: known, source: "cricheroes", url: SAMPLE_PROFILE_URL };
   if (hasAnyStat(manual)) return { stats: manual, source: "manual", url };
   return { stats: null, source: "none", url };
 }
