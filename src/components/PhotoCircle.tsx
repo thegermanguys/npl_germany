@@ -2,10 +2,12 @@ export function PhotoCircle({
   src,
   name,
   size = "md",
+  fit = "cover",
 }: {
   src?: string | null;
   name: string;
   size?: "sm" | "md" | "lg";
+  fit?: "cover" | "contain";
 }) {
   const initials = name
     .split(/\s+/)
@@ -15,7 +17,8 @@ export function PhotoCircle({
     .join("");
 
   if (src) {
-    return <img className={`photo-circle photo-${size}`} src={src} alt={name} />;
+    const fitClass = fit === "contain" ? " photo-contain" : "";
+    return <img className={`photo-circle photo-${size}${fitClass}`} src={src} alt={name} />;
   }
   return (
     <span className={`photo-circle photo-${size} photo-fallback`} aria-hidden="true">

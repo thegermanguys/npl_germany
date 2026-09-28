@@ -48,7 +48,7 @@ export default async function AdminPage() {
       <Nav user={user} active="admin" />
       <section className="page-hero">
         <div className="wrap profile-hero">
-          <PhotoCircle src={logoUrl} name="NPL Germany" size="lg" />
+          <PhotoCircle src={logoUrl} name="NPL Germany" size="lg" fit="contain" />
           <div>
             <div className="eyebrow">LEAGUE ADMIN</div>
             <h1>Season 1</h1>
@@ -65,6 +65,7 @@ export default async function AdminPage() {
               title="NPL Germany"
               src={logoUrl}
               size="md"
+              fit="contain"
               invite="Add logo"
             />
             <p className="muted">{LEAGUE_ADMIN_EMAIL}</p>

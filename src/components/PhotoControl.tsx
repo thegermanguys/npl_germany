@@ -22,6 +22,7 @@ export function PhotoControl({
   hidden,
   invite = "Add photo",
   showName = true,
+  fit = "cover",
 }: {
   action: (state: ActionState, formData: FormData) => Promise<ActionState>;
   name?: "photo" | "logo";
@@ -32,6 +33,7 @@ export function PhotoControl({
   hidden?: Record<string, string>;
   invite?: string;
   showName?: boolean;
+  fit?: "cover" | "contain";
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   const [dragOver, setDragOver] = useState(false);
@@ -127,7 +129,7 @@ export function PhotoControl({
           disabled={pending}
           onClick={() => setOpen((value) => !value)}
         >
-          <PhotoCircle src={src} name={title} size={size} />
+          <PhotoCircle src={src} name={title} size={size} fit={fit} />
         </button>
         {showOverlay ? (
           <button type="button" className="photo-control-overlay" disabled={pending} onClick={onReplace}>

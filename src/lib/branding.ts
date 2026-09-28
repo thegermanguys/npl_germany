@@ -1,14 +1,17 @@
 import { DbNotConfiguredError, isDatabaseConfigured } from "./db";
+import { LEAGUE_LOGO_SRC } from "./brand";
 import { mediaPath } from "./media";
 import { getLeagueLogoId } from "./queries";
 
-export async function leagueLogoUrl(): Promise<string | null> {
-  if (!isDatabaseConfigured()) return null;
+export { LEAGUE_LOGO_SRC, SITE_ORIGIN } from "./brand";
+
+export async function leagueLogoUrl(): Promise<string> {
+  if (!isDatabaseConfigured()) return LEAGUE_LOGO_SRC;
   try {
     const id = await getLeagueLogoId();
-    return id ? mediaPath(id) : null;
+    return id ? mediaPath(id) : LEAGUE_LOGO_SRC;
   } catch (error) {
-    if (error instanceof DbNotConfiguredError) return null;
-    return null;
+    if (error instanceof DbNotConfiguredError) return LEAGUE_LOGO_SRC;
+    return LEAGUE_LOGO_SRC;
   }
 }

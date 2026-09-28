@@ -18,11 +18,7 @@ export async function Nav({
     <nav className="nav">
       <div className="wrap">
         <Link className="brand" href="/">
-          {logoUrl ? (
-            <img className="mark mark-photo" src={logoUrl} alt="" />
-          ) : (
-            <span className="mark">N</span>
-          )}
+          <img className="mark mark-photo" src={logoUrl} alt="NPL Germany" />
           <span className="word">
             NPL <span>GERMANY</span>
           </span>

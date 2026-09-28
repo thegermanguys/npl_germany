@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LEAGUE_LOGO_SRC } from "@/lib/brand";
 
 export function Footer() {
   return (
@@ -6,6 +7,7 @@ export function Footer() {
       <div className="wrap">
         <div className="foot-top">
           <div className="foot-brand">
+            <img className="foot-mark" src={LEAGUE_LOGO_SRC} alt="" />
             <div className="word">NPL GERMANY</div>
             <p>
               Nepal Premier League, Germany Chapter. Season 1 is deuce ball, for Nepali citizens
