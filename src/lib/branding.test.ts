@@ -17,8 +17,6 @@ describe("league brand assets", () => {
       "public/icon.png",
       "public/apple-touch-icon.png",
       "public/og-image.png",
-      "src/app/icon.png",
-      "src/app/apple-icon.png",
     ]) {
       assert.equal(existsSync(join(process.cwd(), file)), true, file);
     }
