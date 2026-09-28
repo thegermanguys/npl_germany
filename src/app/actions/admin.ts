@@ -11,10 +11,13 @@ import {
   getCurrentSeason,
   getProfileById,
   getUserByEmail,
+  getUserById,
+  invalidateUserResetTokens,
   setEligibility,
   updateFranchise,
   updatePlayerProfile,
   updateSeason,
+  updateUserPassword,
 } from "@/lib/queries";
 import { getSession, isAdmin } from "@/lib/session";
 import {
@@ -22,6 +25,7 @@ import {
   isEligibilityStatus,
   isSeasonStatus,
   validateNewAccount,
+  validateNewPassword,
   validateProfileUpdate,
 } from "@/lib/validate";
 import type { ActionState } from "./auth";
@@ -227,4 +231,36 @@ export async function adminSetEligibility(
   revalidatePath(`/players/${profileId}`);
   revalidatePath("/admin");
   return {};
+}
+
+export async function adminSetPassword(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
+  const userId = String(formData.get("userId") ?? "");
+  const parsed = validateNewPassword(
+    String(formData.get("password") ?? ""),
+    String(formData.get("password") ?? ""),
+  );
+  if (!userId) return { error: "Missing account." };
+  if (!parsed.ok) return { fieldErrors: parsed.errors };
+
+  try {
+    const user = await getUserById(userId);
+    if (!user) return { error: "Account not found." };
+    await updateUserPassword(user.id, bcrypt.hashSync(parsed.password, 10));
+    await invalidateUserResetTokens(user.id);
+  } catch (error) {
+    if (error instanceof DbNotConfiguredError) {
+      return { error: "The league database is not connected yet." };
+    }
+    console.error(error);
+    return { error: "Could not update the password." };
+  }
+
+  revalidatePath("/admin/users");
+  return { notice: "Password updated." };
 }

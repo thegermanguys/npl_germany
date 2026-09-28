@@ -5,8 +5,10 @@ import {
   normalizeEmail,
   validateLogin,
   validateNewAccount,
+  validateNewPassword,
   validateProfileUpdate,
   validateRegistration,
+  validateResetEmail,
 } from "./validate.ts";
 
 describe("normalizeEmail", () => {
@@ -90,6 +92,29 @@ describe("validateLogin", () => {
     const result = validateLogin({ email: "Owner@NPL.de", password: "secret" });
     assert.equal(result.ok, true);
     if (result.ok) assert.equal(result.value.email, "owner@npl.de");
+  });
+});
+
+describe("validateResetEmail", () => {
+  it("accepts a normal address", () => {
+    const result = validateResetEmail("  Asha@Example.com ");
+    assert.equal(result.ok, true);
+    if (result.ok) assert.equal(result.email, "asha@example.com");
+  });
+  it("rejects a bare name", () => {
+    const result = validateResetEmail("player");
+    assert.equal(result.ok, false);
+  });
+});
+
+describe("validateNewPassword", () => {
+  it("requires eight characters and a match", () => {
+    const short = validateNewPassword("short", "short");
+    assert.equal(short.ok, false);
+    const mismatch = validateNewPassword("longenough", "different1");
+    assert.equal(mismatch.ok, false);
+    const ok = validateNewPassword("longenough", "longenough");
+    assert.equal(ok.ok, true);
   });
 });
 

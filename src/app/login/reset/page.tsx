@@ -1,23 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LoginForm } from "@/components/LoginForm";
+import { ResetPasswordForm } from "@/components/ResetPasswordForm";
 import { Nav } from "@/components/Nav";
 import { getSession } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Sign in" };
+export const metadata: Metadata = { title: "Reset password" };
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage({
+export default async function ResetPasswordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ reset?: string }>;
+  searchParams: Promise<{ token?: string }>;
 }) {
   const user = await getSession();
   if (user?.role === "admin") redirect("/admin");
   if (user?.role === "franchise_owner") redirect("/players");
   if (user?.role === "player") redirect("/account");
-  const { reset } = await searchParams;
+
+  const { token } = await searchParams;
 
   return (
     <>
@@ -25,19 +26,19 @@ export default async function LoginPage({
       <section className="page-hero">
         <div className="wrap">
           <div className="eyebrow">PORTAL</div>
-          <h1>Sign in</h1>
+          <h1>Reset password</h1>
         </div>
       </section>
       <section className="players-section">
         <div className="wrap narrow">
           <div className="form-card">
-            {reset ? <div className="form-msg ok">Password updated. Sign in.</div> : null}
-            <LoginForm />
+            {token ? (
+              <ResetPasswordForm token={token} />
+            ) : (
+              <p>That reset link is not valid.</p>
+            )}
             <p className="form-follow">
-              <Link href="/login/forgot">Forgot password?</Link>
-            </p>
-            <p className="form-follow">
-              Players register here: <Link href="/register">Register to play</Link>
+              <Link href="/login">Back to sign in</Link>
             </p>
           </div>
         </div>

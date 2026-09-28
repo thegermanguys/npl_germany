@@ -352,6 +352,9 @@ footer{background:var(--ink);color:rgba(255,255,255,0.7);padding:56px 0 28px;}
 }
 .form-follow{margin-top:16px;font-size:14px;color:var(--muted);}
 .form-follow a{color:var(--crimson);font-weight:600;}
+.admin-set-password{display:flex;flex-direction:column;gap:6px;min-width:160px;}
+.admin-set-password label{font-size:11.5px;font-weight:600;color:var(--navy);display:flex;flex-direction:column;gap:4px;}
+.admin-set-password input{font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:5px;}
 .wrap.narrow{max-width:640px;}
 .player-card{color:inherit;display:block;}
 button.g-item{

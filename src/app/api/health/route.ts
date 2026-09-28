@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSql, isDatabaseConfigured } from "@/lib/db";
+import { isMailerConfigured } from "@/lib/password-reset";
 import { isAuthConfigured } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ export async function GET() {
     ok: true,
     database,
     auth: isAuthConfigured(),
+    mailer: isMailerConfigured(),
     schema,
     seasonBall: "deuce",
   });

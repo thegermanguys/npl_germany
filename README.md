@@ -21,7 +21,10 @@ Season 1 is **deuce ball** only.
    The admin email is always `nplgermany.admin@thegermanguy.org`. If you skip
    this, insert a bcrypt hash on `users.password_hash` in Neon. Do not commit
    a password.
-5. Install and apply the schema:
+5. Optional: set `RESEND_API_KEY` and `RESET_FROM_EMAIL` so `/login/forgot` can
+   email a reset link. Without those, the form still works (same success copy)
+   and the admin can set a new password on `/admin/users`. Do not commit keys.
+6. Install and apply the schema:
 
 ```bash
 npm install
