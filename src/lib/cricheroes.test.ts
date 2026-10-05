@@ -15,6 +15,7 @@ import {
   isSamplePlayerUrl,
   knownCardForUrl,
   normalizeCricHeroesUrl,
+  resolveSignupStats,
   parseCricHeroesStats,
   parseShareTarget,
   resolvePlayerStats,
@@ -126,11 +127,62 @@ describe("CricHeroes URL pastes", () => {
     assert.equal(normalizeCricHeroesUrl("www.cricheroes.in/player-profile/41234567/Test-Player/profile"), OTHER_PROFILE_URL);
   });
 
+  it("accepts the Sagar Basnet pastes, including text around the link", () => {
+    const canonical = "https://cricheroes.com/player-profile/30460515/Sagar-Basnet";
+    assert.equal(normalizeCricHeroesUrl("http://cricheroes.com/player-profile/30460515/Sagar-Basnet"), canonical);
+    assert.equal(
+      normalizeCricHeroesUrl("http://cricheroes.com/player-profile/30460515/Sagar-Basnet/matches"),
+      canonical,
+    );
+    assert.equal(
+      normalizeCricHeroesUrl("http://cricheroes.com/player-profile/30460515/Sagar-Basnet/matches?utm_source=app_share_ios"),
+      canonical,
+    );
+    assert.equal(normalizeCricHeroesUrl("cricheroes.com/player-profile/30460515/Sagar-Basnet"), canonical);
+    assert.equal(
+      normalizeCricHeroesUrl("See my profile http://cricheroes.com/player-profile/30460515/Sagar-Basnet/matches thanks"),
+      canonical,
+    );
+    assert.equal(normalizeCricHeroesUrl("https://chshare.link/player/ab12CD"), "https://chshare.link/player/ab12CD");
+    assert.equal(normalizeCricHeroesUrl("https://cricheroes.com/player-profile/30460515"), "https://cricheroes.com/player-profile/30460515");
+  });
+
   it("still rejects pages that are not a player", () => {
     assert.equal(isCricHeroesUrl("cricheroes.com/teams/1?x=1"), false);
     assert.equal(isCricHeroesUrl("example.com/player-profile/41234567/Test-Player"), false);
     assert.equal(isCricHeroesUrl("chshare.link/team/xYz123"), false);
     assert.equal(isCricHeroesUrl(""), false);
+  });
+});
+
+describe("signup stats without a live read", () => {
+  it("keeps a blocked player's link and does not borrow the sample card", async () => {
+    const boom = (async () => {
+      throw new Error("signup must not fetch CricHeroes");
+    }) as typeof fetch;
+    const canonical = "https://cricheroes.com/player-profile/30460515/Sagar-Basnet";
+    const resolved = await withFetch(boom, async () =>
+      resolveSignupStats("http://cricheroes.com/player-profile/30460515/Sagar-Basnet/matches", emptyStats()),
+    );
+    assert.equal(resolved.url, canonical);
+    assert.equal(resolved.source, "none");
+    assert.equal(resolved.stats, null);
+    assert.equal(resolved.notice, null);
+  });
+
+  it("keeps typed numbers and still stores the share link", () => {
+    const resolved = resolveSignupStats("https://chshare.link/player/ab12CD?ref=ios", typed(31, 109, 30));
+    assert.equal(resolved.url, "https://chshare.link/player/ab12CD");
+    assert.equal(resolved.source, "manual");
+    assert.deepEqual([resolved.stats?.matches, resolved.stats?.runs, resolved.stats?.wickets], [31, 109, 30]);
+    assert.equal(resolved.notice, null);
+  });
+
+  it("still applies the sample card only for that player", () => {
+    const resolved = resolveSignupStats(SAMPLE_SHARE_URL, emptyStats());
+    assert.equal(resolved.source, "cricheroes");
+    assert.equal(resolved.stats?.matches, SAMPLE_CARD_STATS.matches);
+    assert.equal(resolved.url, SAMPLE_SHARE_URL);
   });
 });
 
