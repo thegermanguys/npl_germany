@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { isUsablePasswordHash } from "@/lib/admin-account";
-import { resolvePlayerStats, statsFromForm, syncNoticeKey, type PlayerStats } from "@/lib/cricheroes";
+import { resolveSignupStats, statsFromForm, type PlayerStats } from "@/lib/cricheroes";
 import { DbNotConfiguredError } from "@/lib/db";
 import {
   hashResetToken,
@@ -60,7 +60,6 @@ export async function registerPlayer(
   if (!parsed.ok) return { fieldErrors: parsed.errors };
   if (!isAuthConfigured()) return { error: "Could not create your account." };
 
-  let syncKey: string | null = null;
   try {
     const existing = await getUserByEmail(parsed.value.email);
     if (existing) return { fieldErrors: { email: "That email is already registered." } };
@@ -68,8 +67,7 @@ export async function registerPlayer(
     const season = await getCurrentSeason();
     if (!season) return { error: "Season 1 is not set up yet." };
 
-    const resolved = await resolvePlayerStats(parsed.value.cricheroesUrl, statsFromForm(formData));
-    syncKey = syncNoticeKey(resolved.notice);
+    const resolved = resolveSignupStats(parsed.value.cricheroesUrl, statsFromForm(formData));
     const user = await createUser({
       email: parsed.value.email,
       passwordHash: bcrypt.hashSync(parsed.value.password, 10),
@@ -104,7 +102,7 @@ export async function registerPlayer(
     return { error: "Could not create your account." };
   }
 
-  redirect(syncKey ? `/account?sync=${syncKey}` : "/account");
+  redirect("/account");
 }
 
 export async function loginUser(

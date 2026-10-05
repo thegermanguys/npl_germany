@@ -61,16 +61,25 @@ export function SelectField(props: {
   label: string;
   options: readonly string[];
   defaultValue?: string;
+  value?: string;
   placeholder?: string;
   required?: boolean;
   error?: string;
   full?: boolean;
+  onChange?: (event: ChangeEvent<HTMLSelectElement>) => void;
 }) {
-  const { id, name, label, options, defaultValue, placeholder = "Select", required, error, full } = props;
+  const { id, name, label, options, defaultValue, value, placeholder = "Select", required, error, full, onChange } =
+    props;
   return (
     <div className={`field${full ? " full" : ""}`}>
       <label htmlFor={id}>{label}</label>
-      <select id={id} name={name} defaultValue={defaultValue ?? ""} required={required}>
+      <select
+        id={id}
+        name={name}
+        required={required}
+        onChange={onChange}
+        {...(value !== undefined ? { value } : { defaultValue: defaultValue ?? "" })}
+      >
         <option value="">{placeholder}</option>
         {options.map((option) => (
           <option key={option} value={option}>

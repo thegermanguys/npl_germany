@@ -71,6 +71,17 @@ describe("validateRegistration", () => {
     if (result.ok) assert.equal(result.value.city, "Leipzig");
   });
 
+  it("accepts a CricHeroes link pasted with the matches tab and extra words", () => {
+    const result = validateRegistration({
+      ...valid,
+      cricheroesUrl: "Profile: http://cricheroes.com/player-profile/30460515/Sagar-Basnet/matches",
+    });
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.value.cricheroesUrl, "https://cricheroes.com/player-profile/30460515/Sagar-Basnet");
+    }
+  });
+
   it("rejects missing eligibility and a bad CricHeroes URL", () => {
     const result = validateRegistration({
       ...valid,

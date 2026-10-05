@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { startTransition, useActionState, useEffect, useState, type FormEvent } from "react";
 import type { ActionState } from "@/app/actions/auth";
 import { lookupCricHeroesStats } from "@/app/actions/players";
 import {
@@ -52,31 +52,37 @@ export function ProfileForm({
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   const [stats, setStats] = useState(() => statsToFields(player));
-  const [lookupNotice, setLookupNotice] = useState<string | null>(null);
+  const [cricheroesUrl, setCricheroesUrl] = useState(player.cricheroes_url ?? "");
 
   useEffect(() => {
     if (state.stats) setStats(statsToFields(player, state.stats));
   }, [player, state.stats]);
 
-  useEffect(() => {
-    if (player.cricheroes_url) void fillFromUrl(player.cricheroes_url);
-  }, [player.cricheroes_url]);
-
   async function fillFromUrl(raw: string) {
-    const result = await lookupCricHeroesStats(raw);
-    setLookupNotice(result.notice ?? null);
-    const found = result.stats;
-    if (!found) return;
-    const fetched = statsToFields(player, found);
-    setStats((current) => fillBlankFields(current, fetched));
+    try {
+      const result = await lookupCricHeroesStats(raw);
+      const found = result.stats;
+      if (!found) return;
+      const fetched = statsToFields(player, found);
+      setStats((current) => fillBlankFields(current, fetched));
+    } catch {
+      // A blocked read must not look like the profile failed to save.
+    }
   }
 
   const shown = stats;
-  const headlineBlank = !shown.matches && !shown.runs && !shown.wickets;
-  const notice = state.notice ?? (headlineBlank ? (lookupNotice ?? initialNotice) : initialNotice);
+  const notice = state.notice ?? initialNotice;
+
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    startTransition(() => {
+      formAction(data);
+    });
+  }
 
   return (
-    <form action={formAction} className="portal-form">
+    <form className="portal-form" onSubmit={onSubmit}>
       {assignFranchise ? <input type="hidden" name="profileId" value={player.id} /> : null}
       {state.error ? <div className="form-msg err">{state.error}</div> : null}
       {notice && !state.error ? <div className="form-msg note">{notice}</div> : null}
@@ -148,7 +154,8 @@ export function ProfileForm({
           id="cricheroesUrl"
           name="cricheroesUrl"
           label="CricHeroes profile"
-          defaultValue={player.cricheroes_url ?? ""}
+          value={cricheroesUrl}
+          onChange={(event) => setCricheroesUrl(event.target.value)}
           placeholder={SAMPLE_SHARE_URL}
           required
           full

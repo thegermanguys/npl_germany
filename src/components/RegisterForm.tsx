@@ -1,17 +1,59 @@
 "use client";
 
-import { useActionState } from "react";
+import { startTransition, useActionState, useState, type FormEvent } from "react";
 import { registerPlayer, type ActionState } from "@/app/actions/auth";
 import { SAMPLE_SHARE_URL } from "@/lib/cricheroes";
 import { CitySelect, ExperienceSelect, RoleSelect, TextField } from "./FormFields";
 
 const initial: ActionState = {};
 
+type Draft = {
+  fullName: string;
+  email: string;
+  password: string;
+  phone: string;
+  playingRole: string;
+  experience: string;
+  cricheroesUrl: string;
+  statsMatches: string;
+  statsRuns: string;
+  statsWickets: string;
+  nepaliCitizen: boolean;
+  germanyLegalResident: boolean;
+};
+
+const emptyDraft: Draft = {
+  fullName: "",
+  email: "",
+  password: "",
+  phone: "",
+  playingRole: "",
+  experience: "",
+  cricheroesUrl: "",
+  statsMatches: "",
+  statsRuns: "",
+  statsWickets: "",
+  nepaliCitizen: false,
+  germanyLegalResident: false,
+};
+
 export function RegisterForm({ compact = false }: { compact?: boolean }) {
   const [state, action, pending] = useActionState(registerPlayer, initial);
+  const [draft, setDraft] = useState(emptyDraft);
+  function set<K extends keyof Draft>(key: K, value: Draft[K]) {
+    setDraft((current) => ({ ...current, [key]: value }));
+  }
+
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    startTransition(() => {
+      action(data);
+    });
+  }
 
   return (
-    <form action={action} className={compact ? "" : "portal-form"}>
+    <form className={compact ? "" : "portal-form"} onSubmit={onSubmit}>
       {state.error ? <div className="form-msg err">{state.error}</div> : null}
       <div className="frow">
         <TextField
@@ -20,6 +62,8 @@ export function RegisterForm({ compact = false }: { compact?: boolean }) {
           label="Full name"
           placeholder="Your full name"
           required
+          value={draft.fullName}
+          onChange={(event) => set("fullName", event.target.value)}
           error={state.fieldErrors?.fullName}
           autoComplete="name"
         />
@@ -30,6 +74,8 @@ export function RegisterForm({ compact = false }: { compact?: boolean }) {
           type="email"
           placeholder="name@email.com"
           required
+          value={draft.email}
+          onChange={(event) => set("email", event.target.value)}
           error={state.fieldErrors?.email}
           autoComplete="email"
         />
@@ -41,6 +87,8 @@ export function RegisterForm({ compact = false }: { compact?: boolean }) {
           label="Password"
           type="password"
           required
+          value={draft.password}
+          onChange={(event) => set("password", event.target.value)}
           error={state.fieldErrors?.password}
           autoComplete="new-password"
         />
@@ -51,6 +99,8 @@ export function RegisterForm({ compact = false }: { compact?: boolean }) {
           type="tel"
           placeholder="+49 …"
           required
+          value={draft.phone}
+          onChange={(event) => set("phone", event.target.value)}
           error={state.fieldErrors?.phone}
           autoComplete="tel"
         />
@@ -68,6 +118,8 @@ export function RegisterForm({ compact = false }: { compact?: boolean }) {
           name="playingRole"
           label="Playing role"
           required
+          value={draft.playingRole}
+          onChange={(event) => set("playingRole", event.target.value)}
           error={state.fieldErrors?.playingRole}
         />
       </div>
@@ -78,6 +130,8 @@ export function RegisterForm({ compact = false }: { compact?: boolean }) {
           label="Experience"
           required
           full
+          value={draft.experience}
+          onChange={(event) => set("experience", event.target.value)}
           error={state.fieldErrors?.experience}
         />
       </div>
@@ -89,25 +143,62 @@ export function RegisterForm({ compact = false }: { compact?: boolean }) {
           placeholder={SAMPLE_SHARE_URL}
           required
           full
+          value={draft.cricheroesUrl}
+          onChange={(event) => set("cricheroesUrl", event.target.value)}
           error={state.fieldErrors?.cricheroesUrl}
         />
       </div>
       <p className="field-hint stats-hint">If CricHeroes does not sync, add your card numbers.</p>
       <div className="frow frow-3">
-        <TextField id="statsMatches" name="statsMatches" label="Matches" type="number" />
-        <TextField id="statsRuns" name="statsRuns" label="Runs" type="number" />
-        <TextField id="statsWickets" name="statsWickets" label="Wickets" type="number" />
+        <TextField
+          id="statsMatches"
+          name="statsMatches"
+          label="Matches"
+          type="number"
+          value={draft.statsMatches}
+          onChange={(event) => set("statsMatches", event.target.value)}
+        />
+        <TextField
+          id="statsRuns"
+          name="statsRuns"
+          label="Runs"
+          type="number"
+          value={draft.statsRuns}
+          onChange={(event) => set("statsRuns", event.target.value)}
+        />
+        <TextField
+          id="statsWickets"
+          name="statsWickets"
+          label="Wickets"
+          type="number"
+          value={draft.statsWickets}
+          onChange={(event) => set("statsWickets", event.target.value)}
+        />
       </div>
       <div className="check-row">
         <label>
-          <input type="checkbox" name="nepaliCitizen" value="yes" required />
+          <input
+            type="checkbox"
+            name="nepaliCitizen"
+            value="yes"
+            checked={draft.nepaliCitizen}
+            onChange={(event) => set("nepaliCitizen", event.target.checked)}
+            required
+          />
           I am a Nepali national
         </label>
         {state.fieldErrors?.nepaliCitizen ? (
           <span className="field-error">{state.fieldErrors.nepaliCitizen}</span>
         ) : null}
         <label>
-          <input type="checkbox" name="germanyLegalResident" value="yes" required />
+          <input
+            type="checkbox"
+            name="germanyLegalResident"
+            value="yes"
+            checked={draft.germanyLegalResident}
+            onChange={(event) => set("germanyLegalResident", event.target.checked)}
+            required
+          />
           I have legal status and live in Germany
         </label>
         {state.fieldErrors?.germanyLegalResident ? (

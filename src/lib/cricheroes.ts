@@ -51,15 +51,20 @@ export function syncNoticeFromKey(key: string | null | undefined): string | null
 }
 
 const PROFILE_RE =
-  /^https?:\/\/(?:www\.)?cricheroes\.(?:com|in)\/player-profile\/(\d+)\/([A-Za-z0-9._-]+)(?:\/[A-Za-z0-9._-]*)?\/?$/i;
+  /^https?:\/\/(?:www\.)?cricheroes\.(?:com|in)\/player-profile\/(\d+)(?:\/([A-Za-z0-9._-]+))?(?:\/[A-Za-z0-9._-]*)?\/?$/i;
 const SHARE_RE = /^https?:\/\/(?:www\.)?chshare\.link\/player\/([A-Za-z0-9_-]+)\/?$/i;
+/** A player link copied from the app, even when it sits inside a sentence or a share message. */
+const PLAYER_URL_RE =
+  /(?:https?:\/\/)?(?:www\.)?(?:cricheroes\.(?:com|in)\/player-profile\/\d+(?:\/[A-Za-z0-9._-]+)?(?:\/[A-Za-z0-9._-]*)?|chshare\.link\/player\/[A-Za-z0-9_-]+)\/?(?:\?[^\s#]*)?(?:#[^\s]*)?/i;
 
-/** Origin + path only, so `?utm_…`, `#stats`, and a missing `https://` still match. */
+/** Origin + path only, so `?utm_…`, `#stats`, a missing `https://`, and surrounding text still match. */
 function pastedUrl(raw: string): string | null {
   const text = raw?.trim();
   if (!text) return null;
+  const embedded = text.match(PLAYER_URL_RE)?.[0] ?? text;
+  const candidate = embedded.replace(/[),.;]+$/g, "");
   try {
-    const url = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(text) ? text : `https://${text}`);
+    const url = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(candidate) ? candidate : `https://${candidate}`);
     return `${url.protocol}//${url.host}${url.pathname}`;
   } catch {
     return null;
@@ -73,7 +78,10 @@ export function normalizeShareLink(raw: string): string | null {
 
 export function canonicalProfileUrl(raw: string): string | null {
   const match = pastedUrl(raw)?.match(PROFILE_RE);
-  return match ? `https://cricheroes.com/player-profile/${match[1]}/${match[2]}` : null;
+  if (!match) return null;
+  return match[2]
+    ? `https://cricheroes.com/player-profile/${match[1]}/${match[2]}`
+    : `https://cricheroes.com/player-profile/${match[1]}`;
 }
 
 export function normalizeCricHeroesUrl(raw: string): string | null {
@@ -410,6 +418,24 @@ export type ResolvedPlayerStats = {
   url: string;
   notice: string | null;
 };
+
+/**
+ * Store a signup without calling CricHeroes. The live read is blocked, and waiting
+ * on it must not stop the account from being created.
+ */
+export function resolveSignupStats(rawUrl: string, manual: PlayerStats): ResolvedPlayerStats {
+  const url = normalizeCricHeroesUrl(rawUrl);
+  if (!url) return { stats: null, source: "none", url: rawUrl.trim(), notice: null };
+  const known = knownCardForUrl(url);
+  if (hasAnyStat(manual)) {
+    if (known && sameHeadline(manual, known)) {
+      return { stats: mergeStats(manual, known), source: "cricheroes", url, notice: null };
+    }
+    return { stats: manual, source: "manual", url, notice: null };
+  }
+  if (known) return { stats: known, source: "cricheroes", url, notice: null };
+  return { stats: null, source: "none", url, notice: null };
+}
 
 /**
  * Typed numbers always win over the locked sample card, and the sample card only
