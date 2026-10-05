@@ -138,6 +138,20 @@ export function FranchiseEditForm({ franchise }: { franchise: FranchiseRow }) {
           required
         />
       </div>
+      <div className="frow">
+        <TextField
+          id={`purseTotal-${franchise.id}`}
+          name="purseTotal"
+          label="Purse cap (€)"
+          type="number"
+          defaultValue={String(franchise.purse_total)}
+          required
+        />
+        <div className="field">
+          <label>Spent</label>
+          <input value={`€${franchise.purse_spent}`} readOnly />
+        </div>
+      </div>
       <button type="submit" className="btn btn-navy btn-small" disabled={pending}>
         {pending ? "Saving…" : "Save"}
       </button>

@@ -174,13 +174,23 @@ for (const franchise of franchises) {
       city = EXCLUDED.city,
       name = EXCLUDED.name,
       full_name = EXCLUDED.full_name,
-      tagline = EXCLUDED.tagline,
-      description = EXCLUDED.description,
       color_key = EXCLUDED.color_key,
       sort_order = EXCLUDED.sort_order
   `;
 }
 console.log("seeded 6 franchises");
+
+await sql`
+  UPDATE franchises f
+  SET owner_user_id = sub.user_id
+  FROM (
+    SELECT DISTINCT ON (fm.user_id) fm.franchise_id, fm.user_id
+    FROM franchise_memberships fm
+    JOIN users u ON u.id = fm.user_id AND u.role = 'franchise_owner'
+    ORDER BY fm.user_id, fm.franchise_id
+  ) sub
+  WHERE f.id = sub.franchise_id AND f.owner_user_id IS NULL
+`;
 
 await sql`
   INSERT INTO seasons (name, year, ball_type, status, is_current)

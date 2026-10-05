@@ -19,6 +19,16 @@ export type SeasonStatus = (typeof SEASON_STATUSES)[number];
 export const ELIGIBILITY_STATUSES = ["pending", "confirmed", "rejected"] as const;
 export type EligibilityStatus = (typeof ELIGIBILITY_STATUSES)[number];
 
+export const AUCTION_STATUSES = [
+  "pending_review",
+  "approved",
+  "rejected",
+  "in_auction_pool",
+  "sold",
+  "unsold",
+] as const;
+export type AuctionStatus = (typeof AUCTION_STATUSES)[number];
+
 export const STATS_SOURCES = ["none", "cricheroes", "manual"] as const;
 export type StatsSource = (typeof STATS_SOURCES)[number];
 
@@ -60,6 +70,11 @@ export type FranchiseRow = {
   color_key: string;
   sort_order: number;
   logo_id: string | null;
+  owner_user_id: string | null;
+  purse_total: number;
+  purse_spent: number;
+  created_at: string;
+  owner_name?: string | null;
 };
 
 export type SeasonRow = {
@@ -99,6 +114,11 @@ export type PlayerProfileRow = {
   stats_best_bowling: string | null;
   stats_fetched_at: string | null;
   photo_id: string | null;
+  auction_status: AuctionStatus;
+  base_price: number | null;
+  sold_to_franchise_id: string | null;
+  sold_price: number | null;
+  auction_order: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -107,6 +127,35 @@ export type PlayerListItem = PlayerProfileRow & {
   email: string;
   franchise_name: string | null;
   franchise_color: string | null;
+};
+
+export const FIXTURE_STATUSES = ["scheduled", "live", "completed", "abandoned"] as const;
+export type FixtureStatus = (typeof FIXTURE_STATUSES)[number];
+
+export const DEFAULT_FIXTURE_SEASON = "Season 1";
+
+export type FixtureRow = {
+  id: string;
+  season: string;
+  franchise_a_id: string;
+  franchise_b_id: string;
+  ground_name: string;
+  city: string;
+  scheduled_at: string;
+  status: FixtureStatus;
+  result_summary: string | null;
+  winner_franchise_id: string | null;
+  created_at: string;
+  updated_at: string;
+  a_name: string;
+  a_short: string;
+  a_city: string;
+  a_color: string;
+  b_name: string;
+  b_short: string;
+  b_city: string;
+  b_color: string;
+  winner_name: string | null;
 };
 
 export type FieldErrors = Record<string, string>;
