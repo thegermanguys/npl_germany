@@ -92,6 +92,12 @@ export function RegisterForm({ compact = false }: { compact?: boolean }) {
           error={state.fieldErrors?.cricheroesUrl}
         />
       </div>
+      <p className="field-hint stats-hint">If CricHeroes does not sync, add your card numbers.</p>
+      <div className="frow frow-3">
+        <TextField id="statsMatches" name="statsMatches" label="Matches" type="number" />
+        <TextField id="statsRuns" name="statsRuns" label="Runs" type="number" />
+        <TextField id="statsWickets" name="statsWickets" label="Wickets" type="number" />
+      </div>
       <div className="check-row">
         <label>
           <input type="checkbox" name="nepaliCitizen" value="yes" required />

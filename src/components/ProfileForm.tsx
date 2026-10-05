@@ -27,19 +27,32 @@ function statsToFields(player: PlayerListItem, extra?: PlayerStats | null) {
   };
 }
 
+type StatFields = ReturnType<typeof statsToFields>;
+
+function fillBlankFields(current: StatFields, fetched: StatFields): StatFields {
+  const next = { ...current };
+  for (const key of Object.keys(current) as (keyof StatFields)[]) {
+    if (!current[key].trim()) next[key] = fetched[key];
+  }
+  return next;
+}
+
 export function ProfileForm({
   player,
   action,
   franchises,
   assignFranchise = false,
+  initialNotice = null,
 }: {
   player: PlayerListItem;
   action: (state: ActionState, formData: FormData) => Promise<ActionState>;
   franchises?: FranchiseRow[];
   assignFranchise?: boolean;
+  initialNotice?: string | null;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   const [stats, setStats] = useState(() => statsToFields(player));
+  const [lookupNotice, setLookupNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (state.stats) setStats(statsToFields(player, state.stats));
@@ -51,15 +64,22 @@ export function ProfileForm({
 
   async function fillFromUrl(raw: string) {
     const result = await lookupCricHeroesStats(raw);
-    if (result.stats) setStats(statsToFields(player, result.stats));
+    setLookupNotice(result.notice ?? null);
+    const found = result.stats;
+    if (!found) return;
+    const fetched = statsToFields(player, found);
+    setStats((current) => fillBlankFields(current, fetched));
   }
 
   const shown = stats;
+  const headlineBlank = !shown.matches && !shown.runs && !shown.wickets;
+  const notice = state.notice ?? (headlineBlank ? (lookupNotice ?? initialNotice) : initialNotice);
 
   return (
     <form action={formAction} className="portal-form">
       {assignFranchise ? <input type="hidden" name="profileId" value={player.id} /> : null}
       {state.error ? <div className="form-msg err">{state.error}</div> : null}
+      {notice && !state.error ? <div className="form-msg note">{notice}</div> : null}
       <div className="frow">
         <TextField
           id="fullName"
@@ -160,11 +180,11 @@ export function ProfileForm({
         ) : null}
       </div>
       <div className="frow">
-        <TextField id="statsMatches" name="statsMatches" label="Matches" value={shown.matches} onChange={(event) => setStats({ ...shown, matches: event.currentTarget.value })} />
-        <TextField id="statsRuns" name="statsRuns" label="Runs" value={shown.runs} onChange={(event) => setStats({ ...shown, runs: event.currentTarget.value })} />
+        <TextField id="statsMatches" name="statsMatches" label="Matches" type="number" value={shown.matches} onChange={(event) => setStats({ ...shown, matches: event.currentTarget.value })} />
+        <TextField id="statsRuns" name="statsRuns" label="Runs" type="number" value={shown.runs} onChange={(event) => setStats({ ...shown, runs: event.currentTarget.value })} />
       </div>
       <div className="frow">
-        <TextField id="statsWickets" name="statsWickets" label="Wickets" value={shown.wickets} onChange={(event) => setStats({ ...shown, wickets: event.currentTarget.value })} />
+        <TextField id="statsWickets" name="statsWickets" label="Wickets" type="number" value={shown.wickets} onChange={(event) => setStats({ ...shown, wickets: event.currentTarget.value })} />
         <TextField
           id="statsBattingAvg"
           name="statsBattingAvg"

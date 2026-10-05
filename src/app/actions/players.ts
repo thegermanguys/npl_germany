@@ -52,7 +52,10 @@ export async function updateOwnProfile(
     });
     revalidatePath("/account");
     revalidatePath("/players");
-    return resolved.stats ? { stats: resolved.stats } : {};
+    return {
+      ...(resolved.stats ? { stats: resolved.stats } : {}),
+      ...(resolved.notice ? { notice: resolved.notice } : {}),
+    };
   } catch (error) {
     if (error instanceof DbNotConfiguredError) {
       return { error: "The league database is not connected yet." };
@@ -62,8 +65,11 @@ export async function updateOwnProfile(
   }
 }
 
-export async function lookupCricHeroesStats(rawUrl: string): Promise<{ stats?: PlayerStats }> {
+export async function lookupCricHeroesStats(rawUrl: string): Promise<{ stats?: PlayerStats; notice?: string }> {
   if (!isCricHeroesUrl(rawUrl)) return {};
   const resolved = await resolvePlayerStats(rawUrl, statsFromForm(new FormData()));
-  return resolved.stats ? { stats: resolved.stats } : {};
+  return {
+    ...(resolved.stats ? { stats: resolved.stats } : {}),
+    ...(resolved.notice ? { notice: resolved.notice } : {}),
+  };
 }

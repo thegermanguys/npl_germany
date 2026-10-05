@@ -20,7 +20,13 @@ export function canViewPlayer(player: PlayerListItem, user: SessionUser | null):
   return isBuyable(player);
 }
 
+export function canSeeContact(user: SessionUser | null): boolean {
+  return user?.role === "admin" || user?.role === "franchise_owner";
+}
+
+/** Contact fields never reach the client unless the viewer is an admin or franchise owner. */
 export function playersForViewer(players: PlayerListItem[], user: SessionUser | null): PlayerListItem[] {
   if (user?.role === "admin") return players;
-  return players.filter(isBuyable);
+  const buyable = players.filter(isBuyable);
+  return canSeeContact(user) ? buyable : buyable.map((player) => ({ ...player, phone: null, email: "" }));
 }
