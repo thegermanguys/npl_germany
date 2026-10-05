@@ -1,10 +1,14 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  BLOCKED_KEPT_NOTICE,
+  BLOCKED_NOTICE,
   SAMPLE_CARD_STATS,
   SAMPLE_PROFILE_URL,
   SAMPLE_SHARE_URL,
+  UNREADABLE_NOTICE,
   applyKnownCardToPlayer,
+  emptyStats,
   fetchCricHeroesStats,
   isBlockedChallengePage,
   isCricHeroesUrl,
@@ -14,8 +18,121 @@ import {
   parseCricHeroesStats,
   parseShareTarget,
   resolvePlayerStats,
+  syncNoticeFromKey,
+  syncNoticeKey,
+  type PlayerStats,
 } from "./cricheroes.ts";
 import { isBuyable } from "./eligibility.ts";
+
+const OTHER_SHARE_URL = "https://chshare.link/player/xYz123";
+const OTHER_PROFILE_URL = "https://cricheroes.com/player-profile/41234567/Test-Player";
+
+function shareBody(target: string | null): string {
+  const pageProps = target ? { id: "xYz123", link_data: { url: target } } : { id: 0 };
+  return `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({ props: { pageProps } })}</script>`;
+}
+
+/** chshare.link answers; every cricheroes.com page gets the Cloudflare 403 challenge. */
+function cloudflareFetch(shareTarget: string | null = OTHER_PROFILE_URL): typeof fetch {
+  return (async (input: string | URL | Request) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.includes("chshare.link")) {
+      return new Response(shareBody(shareTarget), { status: 200, headers: { "content-type": "text/html" } });
+    }
+    return new Response("<title>Just a moment...</title>", {
+      status: 403,
+      headers: { "content-type": "text/html", "cf-mitigated": "challenge" },
+    });
+  }) as typeof fetch;
+}
+
+async function withFetch<T>(mock: typeof fetch, run: () => Promise<T>): Promise<T> {
+  const original = globalThis.fetch;
+  globalThis.fetch = mock;
+  try {
+    return await run();
+  } finally {
+    globalThis.fetch = original;
+  }
+}
+
+function typed(matches: number, runs: number, wickets: number): PlayerStats {
+  return { ...emptyStats(), matches, runs, wickets };
+}
+
+describe("CricHeroes blocked sync — non-sample players", () => {
+  it("does not turn a Cloudflare 403 for another player into 38 / 422 / 21", async () => {
+    for (const url of [OTHER_SHARE_URL, OTHER_PROFILE_URL]) {
+      const fetched = await withFetch(cloudflareFetch(), () => fetchCricHeroesStats(url));
+      assert.equal(fetched.ok, false);
+      assert.equal(!fetched.ok && fetched.blocked, true);
+
+      const resolved = await withFetch(cloudflareFetch(), () => resolvePlayerStats(url, emptyStats()));
+      assert.equal(resolved.source, "none");
+      assert.equal(resolved.stats, null);
+      assert.equal(resolved.url, OTHER_PROFILE_URL);
+      assert.equal(resolved.notice, BLOCKED_NOTICE);
+    }
+  });
+
+  it("does not use the sample card when CricHeroes times out", async () => {
+    const timeout = (async () => {
+      throw new DOMException("The operation was aborted due to timeout", "TimeoutError");
+    }) as typeof fetch;
+    const resolved = await withFetch(timeout, () => resolvePlayerStats(OTHER_PROFILE_URL, emptyStats()));
+    assert.equal(resolved.stats, null);
+    assert.equal(resolved.source, "none");
+    assert.equal(resolved.notice, BLOCKED_NOTICE);
+  });
+
+  it("keeps the numbers a player typed when the sync is blocked", async () => {
+    const resolved = await withFetch(cloudflareFetch(), () =>
+      resolvePlayerStats(OTHER_SHARE_URL, typed(12, 240, 7)),
+    );
+    assert.equal(resolved.source, "manual");
+    assert.deepEqual([resolved.stats?.matches, resolved.stats?.runs, resolved.stats?.wickets], [12, 240, 7]);
+    assert.equal(resolved.notice, BLOCKED_KEPT_NOTICE);
+  });
+
+  it("keeps typed numbers on the sample URL too instead of the locked card", async () => {
+    const resolved = await withFetch(cloudflareFetch(), () =>
+      resolvePlayerStats(SAMPLE_SHARE_URL, typed(40, 450, 22)),
+    );
+    assert.equal(resolved.source, "manual");
+    assert.deepEqual([resolved.stats?.matches, resolved.stats?.runs, resolved.stats?.wickets], [40, 450, 22]);
+  });
+
+  it("reports a share link that opens no player", async () => {
+    const resolved = await withFetch(cloudflareFetch(null), () => resolvePlayerStats(OTHER_SHARE_URL, emptyStats()));
+    assert.equal(resolved.stats, null);
+    assert.equal(resolved.url, OTHER_SHARE_URL);
+    assert.equal(resolved.notice, UNREADABLE_NOTICE);
+  });
+
+  it("carries the notice across the signup redirect by key", () => {
+    assert.equal(syncNoticeFromKey(syncNoticeKey(BLOCKED_NOTICE)), BLOCKED_NOTICE);
+    assert.equal(syncNoticeFromKey(syncNoticeKey(BLOCKED_KEPT_NOTICE)), BLOCKED_KEPT_NOTICE);
+    assert.equal(syncNoticeFromKey("<script>"), null);
+  });
+});
+
+describe("CricHeroes URL pastes", () => {
+  it("accepts query strings, hashes, and a missing https://", () => {
+    assert.equal(normalizeCricHeroesUrl(`${OTHER_SHARE_URL}?utm_source=app_share`), OTHER_SHARE_URL);
+    assert.equal(normalizeCricHeroesUrl("chshare.link/player/xYz123"), OTHER_SHARE_URL);
+    assert.equal(normalizeCricHeroesUrl("www.chshare.link/player/xYz123/#top"), OTHER_SHARE_URL);
+    assert.equal(normalizeCricHeroesUrl(`${OTHER_PROFILE_URL}/stats?tab=batting#stats`), OTHER_PROFILE_URL);
+    assert.equal(normalizeCricHeroesUrl("cricheroes.com/player-profile/41234567/Test-Player"), OTHER_PROFILE_URL);
+    assert.equal(normalizeCricHeroesUrl("www.cricheroes.in/player-profile/41234567/Test-Player/profile"), OTHER_PROFILE_URL);
+  });
+
+  it("still rejects pages that are not a player", () => {
+    assert.equal(isCricHeroesUrl("cricheroes.com/teams/1?x=1"), false);
+    assert.equal(isCricHeroesUrl("example.com/player-profile/41234567/Test-Player"), false);
+    assert.equal(isCricHeroesUrl("chshare.link/team/xYz123"), false);
+    assert.equal(isCricHeroesUrl(""), false);
+  });
+});
 
 describe("CricHeroes URL — Awanish sample", () => {
   it("accepts the chshare link and the canonical Awanish profile", () => {
@@ -67,19 +184,15 @@ describe("Awanish sample card fallback", () => {
     assert.equal(isBlockedChallengePage("Verify you are human"), true);
     assert.equal(isBlockedChallengePage("<div>38</div><div>Matches</div>"), false);
   });
-  it("fills 38 / 422 / 21 when cricheroes.com is blocked", async () => {
-    const fetched = await fetchCricHeroesStats(SAMPLE_SHARE_URL);
-    assert.equal(fetched.ok, true);
-    if (fetched.ok) {
-      assert.equal(fetched.stats.matches, SAMPLE_CARD_STATS.matches);
-      assert.equal(fetched.stats.runs, SAMPLE_CARD_STATS.runs);
-      assert.equal(fetched.stats.wickets, SAMPLE_CARD_STATS.wickets);
-      assert.equal(fetched.stats.battingAvg, 16.88);
-      assert.equal(fetched.stats.strikeRate, 114.99);
-      assert.equal(fetched.stats.economy, 9.84);
-      assert.equal(fetched.stats.highScore, 55);
-      assert.equal(fetched.stats.bestBowling, "3/16");
-    }
+  it("fills 38 / 422 / 21 for the sample player only when cricheroes.com is blocked", async () => {
+    const resolved = await withFetch(cloudflareFetch(), () => resolvePlayerStats(SAMPLE_SHARE_URL, emptyStats()));
+    assert.equal(resolved.source, "cricheroes");
+    assert.equal(resolved.notice, null);
+    assert.equal(resolved.stats?.matches, SAMPLE_CARD_STATS.matches);
+    assert.equal(resolved.stats?.runs, SAMPLE_CARD_STATS.runs);
+    assert.equal(resolved.stats?.wickets, SAMPLE_CARD_STATS.wickets);
+    assert.equal(resolved.stats?.battingAvg, 16.88);
+    assert.equal(resolved.stats?.bestBowling, "3/16");
   });
   it("fills the account and auction rows when the URL is saved without stats", () => {
     const filled = applyKnownCardToPlayer({

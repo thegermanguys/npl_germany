@@ -139,7 +139,10 @@ export async function adminUpdatePlayer(
     revalidatePath("/admin");
     revalidatePath("/players");
     revalidatePath(`/players/${profile.id}`);
-    return resolved.stats ? { stats: resolved.stats } : {};
+    return {
+      ...(resolved.stats ? { stats: resolved.stats } : {}),
+      ...(resolved.notice ? { notice: resolved.notice } : {}),
+    };
   } catch (error) {
     if (error instanceof DbNotConfiguredError) {
       return { error: "The league database is not connected yet." };

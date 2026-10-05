@@ -9,6 +9,7 @@ import { Nav } from "@/components/Nav";
 import { PhotoControl } from "@/components/PhotoControl";
 import { PlayerStatsDetail } from "@/components/PlayerStats";
 import { ProfileForm } from "@/components/ProfileForm";
+import { syncNoticeFromKey } from "@/lib/cricheroes";
 import { mediaPath } from "@/lib/media";
 import { getPlayerDocuments, getProfileByUserId } from "@/lib/queries";
 import { getSession } from "@/lib/session";
@@ -17,7 +18,12 @@ import { isDatabaseConfigured } from "@/lib/db";
 export const metadata: Metadata = { title: "Account" };
 export const dynamic = "force-dynamic";
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sync?: string }>;
+}) {
+  const syncNotice = syncNoticeFromKey((await searchParams).sync);
   const user = await getSession();
   if (!user) redirect("/login");
   if (user.role === "admin") redirect("/admin");
@@ -74,7 +80,7 @@ export default async function AccountPage() {
           {profile ? <PlayerStatsDetail player={profile} /> : null}
           <div className="form-card">
             {profile ? (
-              <ProfileForm player={profile} action={updateOwnProfile} />
+              <ProfileForm player={profile} action={updateOwnProfile} initialNotice={syncNotice} />
             ) : (
               <p>No player profile is attached to this account.</p>
             )}

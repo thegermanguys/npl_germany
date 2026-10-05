@@ -28,28 +28,52 @@ export const SAMPLE_CARD_STATS: PlayerStats = {
 
 export type CricHeroesFetch =
   | { ok: true; stats: PlayerStats; url: string }
-  | { ok: false; url: string | null; reason: string };
+  | { ok: false; url: string | null; reason: string; blocked: boolean };
+
+export const BLOCKED_NOTICE = "CricHeroes blocked the sync. Add Matches, Runs, and Wickets below.";
+export const BLOCKED_KEPT_NOTICE = "CricHeroes blocked the sync. Your numbers were kept.";
+export const UNREADABLE_NOTICE = "Could not read that CricHeroes card. Add Matches, Runs, and Wickets below.";
+
+const SYNC_NOTICES = {
+  blocked: BLOCKED_NOTICE,
+  kept: BLOCKED_KEPT_NOTICE,
+  unreadable: UNREADABLE_NOTICE,
+} as const;
+
+/** Short key for carrying a sync notice across the signup redirect. */
+export function syncNoticeKey(notice: string | null | undefined): string | null {
+  const entry = Object.entries(SYNC_NOTICES).find(([, text]) => text === notice);
+  return entry ? entry[0] : null;
+}
+
+export function syncNoticeFromKey(key: string | null | undefined): string | null {
+  return key && key in SYNC_NOTICES ? SYNC_NOTICES[key as keyof typeof SYNC_NOTICES] : null;
+}
 
 const PROFILE_RE =
   /^https?:\/\/(?:www\.)?cricheroes\.(?:com|in)\/player-profile\/(\d+)\/([A-Za-z0-9._-]+)(?:\/[A-Za-z0-9._-]*)?\/?$/i;
 const SHARE_RE = /^https?:\/\/(?:www\.)?chshare\.link\/player\/([A-Za-z0-9_-]+)\/?$/i;
 
-export function normalizeShareLink(raw: string): string | null {
+/** Origin + path only, so `?utm_…`, `#stats`, and a missing `https://` still match. */
+function pastedUrl(raw: string): string | null {
+  const text = raw?.trim();
+  if (!text) return null;
   try {
-    const match = new URL(raw.trim()).href.match(SHARE_RE);
-    return match ? `https://chshare.link/player/${match[1]}` : null;
+    const url = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(text) ? text : `https://${text}`);
+    return `${url.protocol}//${url.host}${url.pathname}`;
   } catch {
     return null;
   }
 }
 
+export function normalizeShareLink(raw: string): string | null {
+  const match = pastedUrl(raw)?.match(SHARE_RE);
+  return match ? `https://chshare.link/player/${match[1]}` : null;
+}
+
 export function canonicalProfileUrl(raw: string): string | null {
-  try {
-    const match = new URL(raw.trim()).href.match(PROFILE_RE);
-    return match ? `https://cricheroes.com/player-profile/${match[1]}/${match[2]}` : null;
-  } catch {
-    return null;
-  }
+  const match = pastedUrl(raw)?.match(PROFILE_RE);
+  return match ? `https://cricheroes.com/player-profile/${match[1]}/${match[2]}` : null;
 }
 
 export function normalizeCricHeroesUrl(raw: string): string | null {
@@ -215,7 +239,9 @@ export function parseCricHeroesStats(html: string): PlayerStats | null {
   return statsFromCard(html);
 }
 
-async function readUrl(url: string, timeoutMs = 2500): Promise<string | null> {
+type PageRead = { body: string } | { blocked: boolean };
+
+async function readUrl(url: string, timeoutMs = 2500): Promise<PageRead> {
   const response = await fetch(url, {
     headers: {
       Accept: "text/html,application/json",
@@ -227,63 +253,72 @@ async function readUrl(url: string, timeoutMs = 2500): Promise<string | null> {
     signal: AbortSignal.timeout(timeoutMs),
     cache: "no-store",
   });
-  if (!response.ok) return null;
+  if (response.status === 403 || response.status === 429 || response.status === 503) {
+    return { blocked: true };
+  }
+  if (response.headers.get("cf-mitigated")) return { blocked: true };
+  if (!response.ok) return { blocked: false };
   const body = await response.text();
-  if (isBlockedChallengePage(body)) return null;
-  return body;
+  if (isBlockedChallengePage(body)) return { blocked: true };
+  return { body };
 }
 
-function sampleFallback(rawUrl: string, resolved: string | null): CricHeroesFetch | null {
-  const known = knownCardForUrl(rawUrl) ?? knownCardForUrl(resolved);
-  if (!known) return null;
-  return { ok: true, url: canonicalProfileUrl(resolved ?? "") ?? SAMPLE_PROFILE_URL, stats: known };
+async function readPage(url: string): Promise<PageRead> {
+  try {
+    return await readUrl(url);
+  } catch {
+    return { blocked: true };
+  }
 }
 
 export async function resolveCricHeroesUrl(raw: string): Promise<string | null> {
-  const direct = canonicalProfileUrl(raw);
-  if (direct) return direct;
-  const share = normalizeShareLink(raw);
-  if (!share) return null;
-  if (isSamplePlayerUrl(share)) return SAMPLE_PROFILE_URL;
-  try {
-    const html = await readUrl(share);
-    return html ? parseShareTarget(html) ?? share : share;
-  } catch {
-    return share;
-  }
+  return (await resolveTarget(raw)).url;
 }
 
-export async function fetchCricHeroesStats(rawUrl: string): Promise<CricHeroesFetch> {
-  const known = sampleFallback(rawUrl, null);
-  try {
-    const url = await resolveCricHeroesUrl(rawUrl);
-    if (!url) return known ?? { ok: false, url: null, reason: "Enter a CricHeroes or chshare player link." };
+async function resolveTarget(raw: string): Promise<{ url: string | null; profile: boolean; blocked: boolean }> {
+  const direct = canonicalProfileUrl(raw);
+  if (direct) return { url: direct, profile: true, blocked: false };
+  const share = normalizeShareLink(raw);
+  if (!share) return { url: null, profile: false, blocked: false };
+  if (isSamplePlayerUrl(share)) return { url: SAMPLE_PROFILE_URL, profile: true, blocked: false };
+  const page = await readPage(share);
+  if (!("body" in page)) return { url: share, profile: false, blocked: page.blocked };
+  const target = parseShareTarget(page.body);
+  return target
+    ? { url: target, profile: true, blocked: false }
+    : { url: share, profile: false, blocked: false };
+}
 
-    const pages = known ? [url, `${url}/stats`] : [url, `${url}/stats`, `${url}/matches`];
-    let parsed: PlayerStats | null = null;
-    for (const page of pages) {
-      const body = await readUrl(page);
-      if (!body) continue;
-      const stats = parseCricHeroesStats(body);
-      if (!stats) continue;
-      parsed = parsed ? mergeStats(parsed, stats) : stats;
-      if (hasHeadlineStats(parsed) && hasExtraStats(parsed)) return { ok: true, url, stats: parsed };
-    }
-    if (parsed || known) {
-      const merged = mergeStats(parsed ?? emptyStats(), known && known.ok ? known.stats : emptyStats());
-      if (hasHeadlineStats(merged)) return { ok: true, url, stats: merged };
-    }
-    return sampleFallback(rawUrl, url) ?? { ok: false, url, reason: "Could not read the CricHeroes player card." };
-  } catch {
-    return (
-      known ??
-      sampleFallback(rawUrl, SAMPLE_PROFILE_URL) ?? {
-        ok: false,
-        url: normalizeCricHeroesUrl(rawUrl),
-        reason: "CricHeroes is not reachable from here.",
-      }
-    );
+/** Live read only. A blocked or unreadable card never borrows another player's numbers. */
+export async function fetchCricHeroesStats(rawUrl: string): Promise<CricHeroesFetch> {
+  const target = await resolveTarget(rawUrl);
+  const url = target.url;
+  if (!url) {
+    return { ok: false, url: null, reason: "Enter a CricHeroes or chshare player link.", blocked: false };
   }
+  if (!target.profile) {
+    return target.blocked
+      ? { ok: false, url, reason: "CricHeroes blocked the request.", blocked: true }
+      : { ok: false, url, reason: "That CricHeroes share link does not open a player.", blocked: false };
+  }
+
+  let parsed: PlayerStats | null = null;
+  let blocked = false;
+  for (const page of [url, `${url}/stats`, `${url}/matches`]) {
+    const read = await readPage(page);
+    if (!("body" in read)) {
+      blocked ||= read.blocked;
+      continue;
+    }
+    const stats = parseCricHeroesStats(read.body);
+    if (!stats) continue;
+    parsed = parsed ? mergeStats(parsed, stats) : stats;
+    if (hasHeadlineStats(parsed) && hasExtraStats(parsed)) return { ok: true, url, stats: parsed };
+  }
+  if (parsed && hasHeadlineStats(parsed)) return { ok: true, url, stats: parsed };
+  return blocked
+    ? { ok: false, url, reason: "CricHeroes blocked the request.", blocked: true }
+    : { ok: false, url, reason: "Could not read the CricHeroes player card.", blocked: false };
 }
 
 export function emptyStats(): PlayerStats {
@@ -365,20 +400,43 @@ export function hasAnyStat(stats: PlayerStats): boolean {
   );
 }
 
-export async function resolvePlayerStats(
-  rawUrl: string,
-  manual: PlayerStats,
-): Promise<{ stats: PlayerStats | null; source: "none" | "cricheroes" | "manual"; url: string }> {
+function sameHeadline(a: PlayerStats, b: PlayerStats): boolean {
+  return a.matches === b.matches && a.runs === b.runs && a.wickets === b.wickets;
+}
+
+export type ResolvedPlayerStats = {
+  stats: PlayerStats | null;
+  source: "none" | "cricheroes" | "manual";
+  url: string;
+  notice: string | null;
+};
+
+/**
+ * Typed numbers always win over the locked sample card, and the sample card only
+ * ever applies to the sample player's own URL.
+ */
+export async function resolvePlayerStats(rawUrl: string, manual: PlayerStats): Promise<ResolvedPlayerStats> {
   const fallback = normalizeCricHeroesUrl(rawUrl) ?? rawUrl.trim();
   const fetched = await fetchCricHeroesStats(rawUrl);
   const url = fetched.url ?? fallback;
-  const known = knownCardForUrl(rawUrl) ?? knownCardForUrl(url);
-  if (fetched.ok && hasHeadlineStats(fetched.stats)) {
-    return { stats: known ? mergeStats(fetched.stats, known) : fetched.stats, source: "cricheroes", url };
+  if (fetched.ok) {
+    return { stats: mergeStats(fetched.stats, manual), source: "cricheroes", url, notice: null };
   }
-  if (known) return { stats: known, source: "cricheroes", url: SAMPLE_PROFILE_URL };
-  if (hasAnyStat(manual)) return { stats: manual, source: "manual", url };
-  return { stats: null, source: "none", url };
+
+  const known = knownCardForUrl(rawUrl) ?? knownCardForUrl(url);
+  if (hasAnyStat(manual)) {
+    if (known && sameHeadline(manual, known)) {
+      return { stats: mergeStats(manual, known), source: "cricheroes", url, notice: null };
+    }
+    return { stats: manual, source: "manual", url, notice: fetched.blocked ? BLOCKED_KEPT_NOTICE : null };
+  }
+  if (known) return { stats: known, source: "cricheroes", url, notice: null };
+  return {
+    stats: null,
+    source: "none",
+    url,
+    notice: fetched.blocked ? BLOCKED_NOTICE : UNREADABLE_NOTICE,
+  };
 }
 
 export function statsFromForm(formData: FormData): PlayerStats {
