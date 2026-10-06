@@ -248,6 +248,19 @@ export function validateNewAccount(input: {
   return { ok: true, value: { displayName, email, password, role, franchiseId } };
 }
 
+export function validatePlayerInvite(input: {
+  displayName: string;
+  email: string;
+}): { ok: true; value: { displayName: string; email: string } } | { ok: false; errors: FieldErrors } {
+  const errors: FieldErrors = {};
+  const displayName = input.displayName.trim();
+  const email = normalizeEmail(input.email);
+  if (displayName.length < 2) errors.displayName = "Enter a name.";
+  if (!isValidEmail(email)) errors.email = "Enter a valid email.";
+  if (Object.keys(errors).length) return { ok: false, errors };
+  return { ok: true, value: { displayName, email } };
+}
+
 export function validateInvite(input: {
   displayName: string;
   email: string;

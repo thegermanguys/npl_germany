@@ -6,9 +6,45 @@ import {
   adminUpdateFranchise,
   adminUpdateSeason,
   createAccount,
+  invitePlayer,
 } from "@/app/actions/admin";
 import { SEASON_STATUSES, type FranchiseRow, type SeasonRow } from "@/lib/types";
 import { TextField } from "./FormFields";
+
+export function InvitePlayerForm() {
+  const [state, action, pending] = useActionState(invitePlayer, {});
+
+  return (
+    <form action={action} className="portal-form">
+      {state.error ? (
+        <div className="form-msg err">{state.error}</div>
+      ) : state.notice ? (
+        <div className="form-msg ok">{state.notice}</div>
+      ) : null}
+      <div className="frow">
+        <TextField
+          id="invite-name"
+          name="displayName"
+          label="Name"
+          required
+          error={state.fieldErrors?.displayName}
+        />
+        <TextField
+          id="invite-email"
+          name="email"
+          label="Email"
+          type="email"
+          required
+          error={state.fieldErrors?.email}
+          autoComplete="off"
+        />
+      </div>
+      <button type="submit" className="btn btn-navy btn-small" disabled={pending}>
+        {pending ? "Saving…" : "Invite"}
+      </button>
+    </form>
+  );
+}
 
 export function CreateAccountForm({ franchises }: { franchises: FranchiseRow[] }) {
   const [state, action, pending] = useActionState(createAccount, {});

@@ -21,9 +21,10 @@ Season 1 is **deuce ball** only.
    The admin email is always `nplgermany.admin@thegermanguy.org`. If you skip
    this, insert a bcrypt hash on `users.password_hash` in Neon. Do not commit
    a password.
-5. Optional: set `RESEND_API_KEY` and `RESET_FROM_EMAIL` so `/login/forgot` can
-   email a reset link. Without those, the form still works (same success copy)
-   and the admin can set a new password on `/admin/users`. Do not commit keys.
+5. Optional: set `RESEND_API_KEY` and `RESET_FROM_EMAIL` so `/login/forgot` and
+   player invites can email a link. Reset links last one hour. Invite links last
+   7 days. Without those, both forms still show the same success copy and the
+   admin can set a password on `/admin/users`. Do not commit keys.
 6. Install and apply the schema:
 
 ```bash
@@ -55,7 +56,7 @@ framework). In the Vercel project **npl-germany**:
 
 | Role | How the account is created | What they see |
 | --- | --- | --- |
-| Player | Self-register on `/register` or the home form | Own profile, CricHeroes, stats |
+| Player | Self-register on `/register`, or a league admin invites them by name and email | Own profile, CricHeroes, stats |
 | Franchise staff | The club owner invites them. Two per club. | That club's desk. Not staff changes, other clubs, sales, or passport and residence files |
 | Franchise owner | The league super admin sets them on one club | That club's desk, including its staff |
 | League admin | The league super admin invites them | Players, auction, fixtures, and franchise content |
