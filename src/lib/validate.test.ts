@@ -6,6 +6,7 @@ import {
   validateLogin,
   validateNewAccount,
   validateNewPassword,
+  validatePlayerInvite,
   validateProfileUpdate,
   validateRegistration,
   validateResetEmail,
@@ -144,6 +145,23 @@ describe("validateProfileUpdate", () => {
       cricheroesUrl: "https://cricheroes.com/player-profile/9279138/Awanish",
     });
     assert.equal(result.ok, true);
+  });
+});
+
+describe("validatePlayerInvite", () => {
+  it("asks only for a name and email", () => {
+    const result = validatePlayerInvite({ displayName: "  Asha Rai ", email: " Asha@Example.com " });
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.value.displayName, "Asha Rai");
+      assert.equal(result.value.email, "asha@example.com");
+      assert.equal("password" in result.value, false);
+    }
+  });
+
+  it("rejects a short name", () => {
+    const result = validatePlayerInvite({ displayName: "A", email: "asha@example.com" });
+    assert.equal(result.ok, false);
   });
 });
 

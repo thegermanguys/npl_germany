@@ -15,6 +15,7 @@ import {
   resetExpiresAt,
   resetUrl,
   sendResetEmail,
+  siteOrigin,
 } from "@/lib/password-reset";
 import {
   consumeResetToken,
@@ -164,11 +165,7 @@ export async function requestPasswordReset(
         expiresAt: resetExpiresAt(),
       });
       if (isMailerConfigured()) {
-        const headerList = await headers();
-        const host = headerList.get("x-forwarded-host") ?? headerList.get("host") ?? "";
-        const proto =
-          headerList.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
-        const origin = process.env.SITE_URL?.trim().replace(/\/$/, "") || (host ? `${proto}://${host}` : "");
+        const origin = siteOrigin(await headers());
         if (origin) await sendResetEmail(user.email, resetUrl(origin, token));
       }
     }

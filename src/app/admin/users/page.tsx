@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { forbidden, redirect } from "next/navigation";
-import { AdminSetPasswordForm, CreateAccountForm } from "@/components/AdminForms";
+import { AdminSetPasswordForm, CreateAccountForm, InvitePlayerForm } from "@/components/AdminForms";
 import { InviteLeagueAdminForm, RemoveLeagueAdminForm } from "@/components/RoleForms";
 import { Nav } from "@/components/Nav";
 import { canChangeAccount, canRemoveLeagueAdmin, isLeagueSuperAdmin, roleLabel } from "@/lib/access";
@@ -31,6 +31,10 @@ export default async function AdminUsersPage() {
       <section className="players-section">
         <div className="wrap admin-split">
           <div className="form-stack">
+            <div className="form-card">
+              <h3>Invite player</h3>
+              <InvitePlayerForm />
+            </div>
             {isLeagueSuperAdmin(user) ? (
               <div className="form-card">
                 <h3>Invite league admin</h3>

@@ -1,9 +1,22 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { UNSET_PASSWORD_HASH } from "@/lib/admin-account";
 import { DbNotConfiguredError } from "@/lib/db";
 import { resolvePlayerStats, statsFromForm } from "@/lib/cricheroes";
+import {
+  INVITE_NOTICE,
+  hashResetToken,
+  inviteEmailText,
+  inviteExpiresAt,
+  isMailerConfigured,
+  newResetToken,
+  resetUrl,
+  sendResetEmail,
+  siteOrigin,
+} from "@/lib/password-reset";
 import {
   assignFranchiseOwner,
   createPlayerProfile,
@@ -14,6 +27,7 @@ import {
   getUserByEmail,
   getUserById,
   invalidateUserResetTokens,
+  replacePasswordResetToken,
   setEligibility,
   updateFranchise,
   updatePlayerProfile,
@@ -28,6 +42,7 @@ import {
   isSeasonStatus,
   validateNewAccount,
   validateNewPassword,
+  validatePlayerInvite,
   validateProfileUpdate,
 } from "@/lib/validate";
 import type { ActionState } from "./auth";
@@ -92,6 +107,72 @@ export async function createAccount(
   revalidatePath("/admin");
   revalidatePath("/admin/users");
   return {};
+}
+
+export async function invitePlayer(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
+  const parsed = validatePlayerInvite({
+    displayName: String(formData.get("displayName") ?? ""),
+    email: String(formData.get("email") ?? ""),
+  });
+  if (!parsed.ok) return { fieldErrors: parsed.errors };
+
+  try {
+    const existing = await getUserByEmail(parsed.value.email);
+    if (existing) return { fieldErrors: { email: "That email is already registered." } };
+    const season = await getCurrentSeason();
+    if (!season) return { error: "Season 1 is not set up yet." };
+
+    const user = await createUser({
+      email: parsed.value.email,
+      passwordHash: UNSET_PASSWORD_HASH,
+      role: "player",
+      displayName: parsed.value.displayName,
+    });
+    await createPlayerProfile({
+      userId: user.id,
+      seasonId: season.id,
+      fullName: parsed.value.displayName,
+      phone: "—",
+      city: "Other city",
+      playingRole: "All-rounder",
+      experience: "New to organised cricket",
+      nepaliCitizen: false,
+      germanyLegalResident: false,
+    });
+    const token = newResetToken();
+    await replacePasswordResetToken({
+      userId: user.id,
+      tokenHash: hashResetToken(token),
+      expiresAt: inviteExpiresAt(),
+    });
+    if (isMailerConfigured()) {
+      const origin = siteOrigin(await headers());
+      if (origin) {
+        const link = resetUrl(origin, token);
+        await sendResetEmail(user.email, link, {
+          subject: "NPL Germany password",
+          text: inviteEmailText(link),
+        });
+      }
+    }
+  } catch (error) {
+    if (error instanceof DbNotConfiguredError) {
+      return { error: "The league database is not connected yet." };
+    }
+    console.error(error);
+    return { error: "Could not invite the player." };
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/users");
+  revalidatePath("/players");
+  return { notice: INVITE_NOTICE };
 }
 
 export async function adminUpdatePlayer(

@@ -6,7 +6,7 @@ import { Nav } from "@/components/Nav";
 import { homeForRole } from "@/lib/access";
 import { getSession } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Reset password" };
+export const metadata: Metadata = { title: "Set password" };
 export const dynamic = "force-dynamic";
 
 export default async function ResetPasswordPage({
@@ -26,7 +26,7 @@ export default async function ResetPasswordPage({
       <section className="page-hero">
         <div className="wrap">
           <div className="eyebrow">PORTAL</div>
-          <h1>Reset password</h1>
+          <h1>Set password</h1>
         </div>
       </section>
       <section className="players-section">
