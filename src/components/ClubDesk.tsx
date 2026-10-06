@@ -58,7 +58,7 @@ export function StaffList({
       {canEdit && staff.length >= MAX_FRANCHISE_STAFF ? (
         <p className="muted">A club can have two staff.</p>
       ) : null}
-      {canEdit ? <InviteStaffForm franchiseId={franchiseId} /> : null}
+      {canEdit && staff.length < MAX_FRANCHISE_STAFF ? <InviteStaffForm franchiseId={franchiseId} /> : null}
     </div>
   );
 }
