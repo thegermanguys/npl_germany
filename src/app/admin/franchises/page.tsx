@@ -3,11 +3,14 @@ import Link from "next/link";
 import { forbidden, redirect } from "next/navigation";
 import { uploadFranchiseLogo } from "@/app/actions/media";
 import { FranchiseEditForm } from "@/components/AdminForms";
+import { FranchiseRoster } from "@/components/ClubDesk";
+import { AddFranchiseForm } from "@/components/RoleForms";
 import { Nav } from "@/components/Nav";
 import { PhotoControl } from "@/components/PhotoControl";
+import { isLeagueSuperAdmin } from "@/lib/access";
 import { isDatabaseConfigured } from "@/lib/db";
 import { mediaPath } from "@/lib/media";
-import { listFranchises } from "@/lib/queries";
+import { listFranchiseStaff, listFranchises } from "@/lib/queries";
 import { getSession, isAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Franchises" };
@@ -18,7 +21,8 @@ export default async function AdminFranchisesPage() {
   if (!isAdmin(user)) forbidden();
   if (!isDatabaseConfigured()) redirect("/admin");
 
-  const franchises = await listFranchises();
+  const [franchises, staff] = await Promise.all([listFranchises(), listFranchiseStaff()]);
+  const superAdmin = isLeagueSuperAdmin(user);
 
   return (
     <>
@@ -31,6 +35,12 @@ export default async function AdminFranchisesPage() {
       </section>
       <section className="players-section">
         <div className="wrap franchise-admin">
+          {superAdmin ? (
+            <div className="form-card span-all">
+              <h3>Add franchise</h3>
+              <AddFranchiseForm />
+            </div>
+          ) : null}
           {franchises.map((franchise) => (
             <div className="form-card" key={franchise.id}>
               <PhotoControl
@@ -43,6 +53,12 @@ export default async function AdminFranchisesPage() {
                 invite="Add logo"
               />
               <FranchiseEditForm franchise={franchise} />
+              {superAdmin ? (
+                <FranchiseRoster
+                  franchise={franchise}
+                  staff={staff.filter((person) => person.franchise_id === franchise.id)}
+                />
+              ) : null}
             </div>
           ))}
           <p>

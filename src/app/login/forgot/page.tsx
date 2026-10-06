@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ForgotPasswordForm } from "@/components/ForgotPasswordForm";
 import { Nav } from "@/components/Nav";
+import { homeForRole } from "@/lib/access";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Forgot password" };
@@ -10,9 +11,8 @@ export const dynamic = "force-dynamic";
 
 export default async function ForgotPasswordPage() {
   const user = await getSession();
-  if (user?.role === "admin") redirect("/admin");
-  if (user?.role === "franchise_owner") redirect("/players");
-  if (user?.role === "player") redirect("/account");
+  const home = homeForRole(user?.role);
+  if (home) redirect(home);
 
   return (
     <>

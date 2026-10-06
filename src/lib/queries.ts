@@ -241,10 +241,12 @@ function mapFranchise(row: Record<string, unknown>): FranchiseRow {
 export async function listFranchises(): Promise<FranchiseRow[]> {
   const sql = getSql();
   const rows = await sql`
-    SELECT id, slug, city, name, full_name, tagline, description, color_key, sort_order,
-           logo_id, owner_user_id, purse_total, purse_spent, created_at::text
-    FROM franchises
-    ORDER BY sort_order, city
+    SELECT f.id, f.slug, f.city, f.name, f.full_name, f.tagline, f.description, f.color_key, f.sort_order,
+           f.logo_id, f.owner_user_id, f.purse_total, f.purse_spent, f.created_at::text,
+           u.display_name AS owner_name
+    FROM franchises f
+    LEFT JOIN users u ON u.id = f.owner_user_id
+    ORDER BY f.sort_order, f.city
   `;
   return rows.map((row) => mapFranchise(row as Record<string, unknown>));
 }
@@ -252,10 +254,12 @@ export async function listFranchises(): Promise<FranchiseRow[]> {
 export async function getFranchise(id: string): Promise<FranchiseRow | null> {
   const sql = getSql();
   const rows = await sql`
-    SELECT id, slug, city, name, full_name, tagline, description, color_key, sort_order,
-           logo_id, owner_user_id, purse_total, purse_spent, created_at::text
-    FROM franchises
-    WHERE id = ${id}
+    SELECT f.id, f.slug, f.city, f.name, f.full_name, f.tagline, f.description, f.color_key, f.sort_order,
+           f.logo_id, f.owner_user_id, f.purse_total, f.purse_spent, f.created_at::text,
+           u.display_name AS owner_name
+    FROM franchises f
+    LEFT JOIN users u ON u.id = f.owner_user_id
+    WHERE f.id = ${id}
     LIMIT 1
   `;
   return rows[0] ? mapFranchise(rows[0] as Record<string, unknown>) : null;
@@ -277,17 +281,157 @@ export async function updateFranchise(
 
 export async function assignFranchiseOwner(userId: string, franchiseId: string): Promise<void> {
   const sql = getSql();
-  await sql`UPDATE franchises SET owner_user_id = NULL WHERE owner_user_id = ${userId}`;
+  const current = await sql`SELECT owner_user_id FROM franchises WHERE id = ${franchiseId} LIMIT 1`;
+  const previous = (current[0] as { owner_user_id: string | null } | undefined)?.owner_user_id ?? null;
+  await sql`UPDATE franchises SET owner_user_id = NULL WHERE owner_user_id = ${userId} AND id <> ${franchiseId}`;
   await sql`UPDATE franchises SET owner_user_id = ${userId} WHERE id = ${franchiseId}`;
-  await sql`
-    DELETE FROM franchise_memberships
-    WHERE user_id = ${userId} OR franchise_id = ${franchiseId}
-  `;
+  await sql`DELETE FROM franchise_memberships WHERE user_id = ${userId}`;
+  if (previous && previous !== userId) {
+    await sql`
+      DELETE FROM franchise_memberships
+      WHERE user_id = ${previous} AND franchise_id = ${franchiseId}
+    `;
+  }
   await sql`
     INSERT INTO franchise_memberships (user_id, franchise_id)
     VALUES (${userId}, ${franchiseId})
     ON CONFLICT (user_id, franchise_id) DO NOTHING
   `;
+}
+
+export async function clearFranchiseOwner(franchiseId: string): Promise<void> {
+  const sql = getSql();
+  const rows = await sql`SELECT owner_user_id FROM franchises WHERE id = ${franchiseId} LIMIT 1`;
+  const ownerId = (rows[0] as { owner_user_id: string | null } | undefined)?.owner_user_id ?? null;
+  await sql`UPDATE franchises SET owner_user_id = NULL WHERE id = ${franchiseId}`;
+  if (ownerId) {
+    await sql`
+      DELETE FROM franchise_memberships
+      WHERE user_id = ${ownerId} AND franchise_id = ${franchiseId}
+    `;
+  }
+}
+
+export type ClubStaff = {
+  id: string;
+  email: string;
+  display_name: string;
+  franchise_id: string;
+};
+
+export async function franchiseForUser(userId: string): Promise<FranchiseRow | null> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT f.id, f.slug, f.city, f.name, f.full_name, f.tagline, f.description, f.color_key, f.sort_order,
+           f.logo_id, f.owner_user_id, f.purse_total, f.purse_spent, f.created_at::text,
+           u.display_name AS owner_name
+    FROM franchises f
+    LEFT JOIN users u ON u.id = f.owner_user_id
+    WHERE f.owner_user_id = ${userId}
+       OR f.id IN (SELECT franchise_id FROM franchise_memberships WHERE user_id = ${userId})
+    ORDER BY CASE WHEN f.owner_user_id = ${userId} THEN 0 ELSE 1 END
+    LIMIT 1
+  `;
+  return rows[0] ? mapFranchise(rows[0] as Record<string, unknown>) : null;
+}
+
+export async function listFranchiseStaff(): Promise<ClubStaff[]> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT u.id, u.email, u.display_name, fm.franchise_id
+    FROM franchise_memberships fm
+    JOIN users u ON u.id = fm.user_id
+    WHERE u.role = 'franchise_staff'
+    ORDER BY u.display_name
+  `;
+  return (rows as Array<{ id: string; email: string; display_name: string; franchise_id: string }>).map(
+    (row) => ({
+      id: String(row.id),
+      email: String(row.email),
+      display_name: String(row.display_name),
+      franchise_id: String(row.franchise_id),
+    }),
+  );
+}
+
+export async function countFranchiseStaff(franchiseId: string): Promise<number> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT count(*)::int AS n
+    FROM franchise_memberships fm
+    JOIN users u ON u.id = fm.user_id
+    WHERE fm.franchise_id = ${franchiseId} AND u.role = 'franchise_staff'
+  `;
+  return Number((rows[0] as { n: number } | undefined)?.n ?? 0);
+}
+
+export async function addFranchiseStaffMembership(userId: string, franchiseId: string): Promise<void> {
+  const sql = getSql();
+  await sql`DELETE FROM franchise_memberships WHERE user_id = ${userId}`;
+  await sql`
+    INSERT INTO franchise_memberships (user_id, franchise_id)
+    VALUES (${userId}, ${franchiseId})
+  `;
+}
+
+export async function deleteUser(userId: string): Promise<void> {
+  const sql = getSql();
+  await sql`DELETE FROM users WHERE id = ${userId}`;
+}
+
+export async function createFranchise(input: {
+  slug: string;
+  city: string;
+  name: string;
+  fullName: string;
+  tagline: string;
+  description: string;
+  colorKey: string;
+}): Promise<string> {
+  const sql = getSql();
+  const rows = await sql`
+    INSERT INTO franchises (slug, city, name, full_name, tagline, description, color_key, sort_order)
+    VALUES (
+      ${input.slug}, ${input.city}, ${input.name}, ${input.fullName},
+      ${input.tagline}, ${input.description}, ${input.colorKey},
+      (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM franchises)
+    )
+    RETURNING id
+  `;
+  return String((rows[0] as { id: string }).id);
+}
+
+export async function updateFranchiseIdentity(
+  id: string,
+  input: { city: string; name: string; fullName: string; slug: string },
+): Promise<void> {
+  const sql = getSql();
+  await sql`
+    UPDATE franchises
+    SET city = ${input.city},
+        name = ${input.name},
+        full_name = ${input.fullName},
+        slug = ${input.slug}
+    WHERE id = ${id}
+  `;
+}
+
+export async function deleteFranchise(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT
+      (SELECT count(*)::int FROM fixtures
+        WHERE franchise_a_id = ${id} OR franchise_b_id = ${id} OR winner_franchise_id = ${id}) AS fixtures,
+      (SELECT count(*)::int FROM player_profiles
+        WHERE franchise_id = ${id} OR sold_to_franchise_id = ${id}) AS players
+  `;
+  const used = rows[0] as { fixtures: number; players: number } | undefined;
+  if ((used?.fixtures ?? 0) > 0 || (used?.players ?? 0) > 0) {
+    return { ok: false, error: "Move players and fixtures off this franchise first." };
+  }
+  await sql`DELETE FROM franchise_memberships WHERE franchise_id = ${id}`;
+  await sql`DELETE FROM franchises WHERE id = ${id}`;
+  return { ok: true };
 }
 
 export async function ownerFranchiseIds(userId: string): Promise<string[]> {
@@ -473,7 +617,7 @@ export async function countUsersByRole(): Promise<Record<Role, number>> {
   const rows = await sql`
     SELECT role, count(*)::int AS n FROM users GROUP BY role
   `;
-  const counts: Record<Role, number> = { player: 0, franchise_owner: 0, admin: 0 };
+  const counts: Record<Role, number> = { player: 0, franchise_owner: 0, franchise_staff: 0, admin: 0 };
   for (const row of rows as Array<{ role: Role; n: number }>) {
     counts[row.role] = row.n;
   }
@@ -535,19 +679,23 @@ export async function getPlayerDocuments(profileId: string): Promise<PlayerDocum
 
 export async function findDocumentOwner(
   mediaId: string,
-): Promise<{ profileId: string; userId: string } | null> {
+): Promise<{ profileId: string; userId: string; franchiseId: string | null } | null> {
   const sql = getSql();
   const rows = await sql`
-    SELECT id, user_id
+    SELECT id, user_id, COALESCE(sold_to_franchise_id, franchise_id) AS franchise_id
     FROM player_profiles
     WHERE passport_id = ${mediaId}
        OR residence_permit_id = ${mediaId}
        OR health_insurance_id = ${mediaId}
     LIMIT 1
   `;
-  const row = rows[0] as { id: string; user_id: string } | undefined;
+  const row = rows[0] as { id: string; user_id: string; franchise_id: string | null } | undefined;
   if (!row) return null;
-  return { profileId: String(row.id), userId: String(row.user_id) };
+  return {
+    profileId: String(row.id),
+    userId: String(row.user_id),
+    franchiseId: row.franchise_id ? String(row.franchise_id) : null,
+  };
 }
 
 export async function setPlayerDocument(

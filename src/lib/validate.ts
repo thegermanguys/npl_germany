@@ -237,11 +237,79 @@ export function validateNewAccount(input: {
   if (displayName.length < 2) errors.displayName = "Enter a name.";
   if (!isValidEmail(email)) errors.email = "Enter a valid email.";
   if (password.length < 8) errors.password = "Use at least 8 characters.";
-  if (!isRole(role) || role === "admin") errors.role = "Choose player or franchise owner.";
+  if (!isRole(role) || role === "admin" || role === "franchise_staff") {
+    errors.role = "Choose player or franchise owner.";
+  }
   if (role === "franchise_owner" && !franchiseId) errors.franchiseId = "Assign a franchise.";
 
-  if (Object.keys(errors).length || !isRole(role) || role === "admin") {
+  if (Object.keys(errors).length || !isRole(role) || role === "admin" || role === "franchise_staff") {
     return { ok: false, errors };
   }
   return { ok: true, value: { displayName, email, password, role, franchiseId } };
+}
+
+export function validateInvite(input: {
+  displayName: string;
+  email: string;
+  password: string;
+}): { ok: true; value: { displayName: string; email: string; password: string } } | { ok: false; errors: FieldErrors } {
+  const errors: FieldErrors = {};
+  const displayName = input.displayName.trim();
+  const email = normalizeEmail(input.email);
+  const password = input.password;
+  if (displayName.length < 2) errors.displayName = "Enter a name.";
+  if (!isValidEmail(email)) errors.email = "Enter a valid email.";
+  if (password.length < 8) errors.password = "Use at least 8 characters.";
+  if (Object.keys(errors).length) return { ok: false, errors };
+  return { ok: true, value: { displayName, email, password } };
+}
+
+const FRANCHISE_CITY_COLORS = new Set(["frankfurt", "munich", "berlin", "hamburg", "cologne", "stuttgart"]);
+
+export function franchiseSlug(city: string, name: string): string {
+  return `${city} ${name}`
+    .trim()
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+export function franchiseColorKey(city: string): string {
+  const key = city.trim().toLowerCase();
+  return FRANCHISE_CITY_COLORS.has(key) ? key : "navy";
+}
+
+export function validateFranchiseDraft(input: {
+  city: string;
+  name: string;
+  tagline: string;
+  description: string;
+}):
+  | { ok: true; value: { city: string; name: string; fullName: string; slug: string; tagline: string; description: string; colorKey: string } }
+  | { ok: false; errors: FieldErrors } {
+  const errors: FieldErrors = {};
+  const city = input.city.trim();
+  const name = input.name.trim();
+  const tagline = input.tagline.trim();
+  const description = input.description.trim();
+  if (city.length < 2) errors.city = "Enter a city.";
+  if (name.length < 2) errors.name = "Enter a name.";
+  if (!tagline) errors.tagline = "Enter a tagline.";
+  if (!description) errors.description = "Enter a description.";
+  const slug = franchiseSlug(city, name);
+  if (!slug) errors.name = "Enter a name.";
+  if (Object.keys(errors).length) return { ok: false, errors };
+  return {
+    ok: true,
+    value: {
+      city,
+      name,
+      fullName: `${city} ${name}`,
+      slug,
+      tagline,
+      description,
+      colorKey: franchiseColorKey(city),
+    },
+  };
 }

@@ -11,6 +11,7 @@ import { PlayerStatsDetail } from "@/components/PlayerStats";
 import { ProfileForm } from "@/components/ProfileForm";
 import { syncNoticeFromKey } from "@/lib/cricheroes";
 import { mediaPath } from "@/lib/media";
+import { homeForRole } from "@/lib/access";
 import { getPlayerDocuments, getProfileByUserId } from "@/lib/queries";
 import { getSession } from "@/lib/session";
 import { isDatabaseConfigured } from "@/lib/db";
@@ -26,8 +27,10 @@ export default async function AccountPage({
   const syncNotice = syncNoticeFromKey((await searchParams).sync);
   const user = await getSession();
   if (!user) redirect("/login");
-  if (user.role === "admin") redirect("/admin");
-  if (user.role === "franchise_owner") redirect("/players");
+  if (user.role !== "player") {
+    const home = homeForRole(user.role);
+    if (home) redirect(home);
+  }
 
   if (!isDatabaseConfigured()) {
     return (

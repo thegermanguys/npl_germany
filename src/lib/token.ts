@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
-import type { SessionUser } from "./types";
+import { ROLES, type Role, type SessionUser } from "./types";
 
 export const SESSION_COOKIE = "npl_session";
 
@@ -39,13 +39,11 @@ export async function readSessionToken(token: string): Promise<SessionUser | nul
     ) {
       return null;
     }
-    if (payload.role !== "player" && payload.role !== "franchise_owner" && payload.role !== "admin") {
-      return null;
-    }
+    if (!(ROLES as readonly string[]).includes(payload.role)) return null;
     return {
       userId: payload.userId,
       email: payload.email,
-      role: payload.role,
+      role: payload.role as Role,
       displayName: payload.displayName,
     };
   } catch {

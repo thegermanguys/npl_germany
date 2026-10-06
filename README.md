@@ -56,8 +56,10 @@ framework). In the Vercel project **npl-germany**:
 | Role | How the account is created | What they see |
 | --- | --- | --- |
 | Player | Self-register on `/register` or the home form | Own profile, CricHeroes, stats |
-| Franchise owner | Admin creates the account | Eligible (buyable) player list, profiles, stats |
-| Admin | Seeded as `nplgermany.admin@thegermanguy.org` | Users, eligibility, franchises, season, logos, player records |
+| Franchise staff | The club owner invites them. Two per club. | That club's desk. Not staff changes, other clubs, sales, or passport and residence files |
+| Franchise owner | The league super admin sets them on one club | That club's desk, including its staff |
+| League admin | The league super admin invites them | Players, auction, fixtures, and franchise content |
+| League super admin | Seeded as `nplgermany.admin@thegermanguy.org` | League admins, every franchise, its owner, and its staff. This account cannot be demoted |
 
 Season 1 eligibility is Nepali + legal status living in Germany. Admin confirms or rejects.
 Only confirmed eligible players are buyable in the auction list.

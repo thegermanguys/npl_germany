@@ -16,6 +16,7 @@ import {
   setAuctionPlayer,
   setBasePrice,
 } from "@/lib/queries";
+import { canSellPlayers } from "@/lib/access";
 import { getSession, isAdmin } from "@/lib/session";
 import type { ActionState } from "./auth";
 
@@ -90,8 +91,8 @@ export async function adminSellPlayer(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const denied = await requireAdmin();
-  if (denied) return denied;
+  const session = await getSession();
+  if (!canSellPlayers(session?.role)) return { error: "You cannot sell players." };
   const playerId = String(formData.get("playerId") ?? "");
   const franchiseId = String(formData.get("franchiseId") ?? "");
   const price = parseEuroAmount(String(formData.get("price") ?? ""));

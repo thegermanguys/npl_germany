@@ -4,6 +4,7 @@ import { CricketMarks } from "@/components/CricketIcon";
 import { CricketPitch } from "@/components/CricketPitch";
 import { Nav } from "@/components/Nav";
 import { RegisterForm } from "@/components/RegisterForm";
+import { homeForRole } from "@/lib/access";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Register" };
@@ -11,9 +12,8 @@ export const dynamic = "force-dynamic";
 
 export default async function RegisterPage() {
   const user = await getSession();
-  if (user?.role === "player") redirect("/account");
-  if (user?.role === "admin") redirect("/admin");
-  if (user?.role === "franchise_owner") redirect("/players");
+  const home = homeForRole(user?.role);
+  if (home) redirect(home);
 
   return (
     <>

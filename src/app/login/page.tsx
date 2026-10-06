@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/LoginForm";
 import { Nav } from "@/components/Nav";
+import { homeForRole } from "@/lib/access";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Sign in" };
@@ -14,9 +15,8 @@ export default async function LoginPage({
   searchParams: Promise<{ reset?: string }>;
 }) {
   const user = await getSession();
-  if (user?.role === "admin") redirect("/admin");
-  if (user?.role === "franchise_owner") redirect("/players");
-  if (user?.role === "player") redirect("/account");
+  const home = homeForRole(user?.role);
+  if (home) redirect(home);
   const { reset } = await searchParams;
 
   return (
