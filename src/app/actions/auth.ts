@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
+import { homeForRole } from "@/lib/access";
 import { isUsablePasswordHash } from "@/lib/admin-account";
 import { resolveSignupStats, statsFromForm, type PlayerStats } from "@/lib/cricheroes";
 import { DbNotConfiguredError } from "@/lib/db";
@@ -132,8 +133,8 @@ export async function loginUser(
       role: user.role,
       displayName: user.display_name,
     });
-    if (user.role === "admin") redirect("/admin");
-    if (user.role === "franchise_owner") redirect("/players");
+    const home = homeForRole(user.role);
+    if (home) redirect(home);
   } catch (error) {
     if (error instanceof DbNotConfiguredError) {
       return { error: "The league database is not connected yet." };

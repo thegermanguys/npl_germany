@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   email text NOT NULL UNIQUE,
   password_hash text NOT NULL,
-  role text NOT NULL DEFAULT 'player' CHECK (role IN ('player', 'franchise_owner', 'admin')),
+  role text NOT NULL DEFAULT 'player' CHECK (role IN ('player', 'franchise_owner', 'franchise_staff', 'admin')),
   display_name text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -138,6 +138,9 @@ ALTER TABLE franchises ADD COLUMN IF NOT EXISTS logo_id uuid REFERENCES media_as
 ALTER TABLE franchises ADD COLUMN IF NOT EXISTS owner_user_id uuid REFERENCES users(id) ON DELETE SET NULL;
 ALTER TABLE franchises ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
 ALTER TABLE users ALTER COLUMN role SET DEFAULT 'player';
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check
+  CHECK (role IN ('player', 'franchise_owner', 'franchise_staff', 'admin'));
 
 CREATE UNIQUE INDEX IF NOT EXISTS franchises_one_owner
   ON franchises (owner_user_id)

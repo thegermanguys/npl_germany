@@ -64,10 +64,13 @@ describe("playersForViewer contact fields", () => {
     }
   });
 
-  it("keeps contact for franchise owners and admins", () => {
+  it("keeps contact for franchise owners, franchise staff, and admins", () => {
     const owner = playersForViewer(roster, viewer("franchise_owner"));
     assert.equal(owner.length, 1);
     assert.equal(owner[0].email, "player@example.com");
+    const staff = playersForViewer(roster, viewer("franchise_staff"));
+    assert.equal(staff.length, 1);
+    assert.equal(staff[0].phone, "+49 000 0000");
     const admin = playersForViewer(roster, viewer("admin"));
     assert.equal(admin.length, 2);
     assert.equal(admin[0].phone, "+49 000 0000");

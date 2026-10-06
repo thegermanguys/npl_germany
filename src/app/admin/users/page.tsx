@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { forbidden, redirect } from "next/navigation";
 import { AdminSetPasswordForm, CreateAccountForm } from "@/components/AdminForms";
+import { InviteLeagueAdminForm, RemoveLeagueAdminForm } from "@/components/RoleForms";
 import { Nav } from "@/components/Nav";
+import { canChangeAccount, canRemoveLeagueAdmin, isLeagueSuperAdmin, roleLabel } from "@/lib/access";
 import { isDatabaseConfigured } from "@/lib/db";
 import { listFranchises, listUsers } from "@/lib/queries";
 import { getSession, isAdmin } from "@/lib/session";
@@ -28,9 +30,17 @@ export default async function AdminUsersPage() {
       </section>
       <section className="players-section">
         <div className="wrap admin-split">
-          <div className="form-card">
-            <h3>Create account</h3>
-            <CreateAccountForm franchises={franchises} />
+          <div className="form-stack">
+            {isLeagueSuperAdmin(user) ? (
+              <div className="form-card">
+                <h3>Invite league admin</h3>
+                <InviteLeagueAdminForm />
+              </div>
+            ) : null}
+            <div className="form-card">
+              <h3>Create account</h3>
+              <CreateAccountForm franchises={franchises} />
+            </div>
           </div>
           <div className="table-wrap">
             <table className="data-table">
@@ -48,10 +58,14 @@ export default async function AdminUsersPage() {
                   <tr key={row.id}>
                     <td>{row.display_name}</td>
                     <td>{row.email}</td>
-                    <td>{row.role.replace("_", " ")}</td>
+                    <td>
+                      {roleLabel(row)}
+                      {isLeagueSuperAdmin(row) ? <div className="muted">This account stays.</div> : null}
+                    </td>
                     <td>{row.franchise_name || "—"}</td>
                     <td>
-                      <AdminSetPasswordForm userId={row.id} />
+                      {canRemoveLeagueAdmin(user, row) ? <RemoveLeagueAdminForm userId={row.id} /> : null}
+                      {canChangeAccount(user, row) ? <AdminSetPasswordForm userId={row.id} /> : null}
                     </td>
                   </tr>
                 ))}

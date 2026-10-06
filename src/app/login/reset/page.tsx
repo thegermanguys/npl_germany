@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ResetPasswordForm } from "@/components/ResetPasswordForm";
 import { Nav } from "@/components/Nav";
+import { homeForRole } from "@/lib/access";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Reset password" };
@@ -14,9 +15,8 @@ export default async function ResetPasswordPage({
   searchParams: Promise<{ token?: string }>;
 }) {
   const user = await getSession();
-  if (user?.role === "admin") redirect("/admin");
-  if (user?.role === "franchise_owner") redirect("/players");
-  if (user?.role === "player") redirect("/account");
+  const home = homeForRole(user?.role);
+  if (home) redirect(home);
 
   const { token } = await searchParams;
 

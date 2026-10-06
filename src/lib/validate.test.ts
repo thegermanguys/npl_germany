@@ -170,4 +170,15 @@ describe("validateNewAccount", () => {
     });
     assert.equal(result.ok, false);
   });
+
+  it("does not create franchise staff from the player form", () => {
+    const result = validateNewAccount({
+      displayName: "Staff",
+      email: "staff@example.com",
+      password: "longenough",
+      role: "franchise_staff",
+      franchiseId: "",
+    });
+    assert.equal(result.ok, false);
+  });
 });

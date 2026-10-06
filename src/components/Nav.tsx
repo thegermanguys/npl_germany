@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { homeForRole } from "@/lib/access";
 import { leagueLogoUrl } from "@/lib/branding";
 import type { SessionUser } from "@/lib/types";
 import { SignOutButton } from "./SignOutButton";
@@ -8,9 +9,10 @@ export async function Nav({
   active,
 }: {
   user: SessionUser | null;
-  active?: "players" | "gallery" | "admin" | "account" | "auction" | "fixtures";
+  active?: "players" | "gallery" | "admin" | "account" | "auction" | "fixtures" | "owner";
 }) {
-  const ctaHref = user ? (user.role === "admin" ? "/admin" : user.role === "franchise_owner" ? "/players" : "/account") : "/register";
+  const ctaHref = user ? (homeForRole(user.role) ?? "/account") : "/register";
+  const clubDesk = user?.role === "franchise_owner" || user?.role === "franchise_staff";
   const ctaLabel = user ? user.displayName : "Register to play";
   const logoUrl = await leagueLogoUrl();
 
@@ -42,6 +44,11 @@ export async function Nav({
           {user?.role === "admin" ? (
             <Link href="/admin" className={active === "admin" ? "active" : undefined}>
               Admin
+            </Link>
+          ) : null}
+          {clubDesk ? (
+            <Link href="/owner" className={active === "owner" ? "active" : undefined}>
+              Club
             </Link>
           ) : null}
           {user ? (

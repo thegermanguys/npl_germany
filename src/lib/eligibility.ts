@@ -21,10 +21,10 @@ export function canViewPlayer(player: PlayerListItem, user: SessionUser | null):
 }
 
 export function canSeeContact(user: SessionUser | null): boolean {
-  return user?.role === "admin" || user?.role === "franchise_owner";
+  return user?.role === "admin" || user?.role === "franchise_owner" || user?.role === "franchise_staff";
 }
 
-/** Contact fields never reach the client unless the viewer is an admin or franchise owner. */
+/** Contact fields never reach the client unless the viewer is league staff or that club's desk. */
 export function playersForViewer(players: PlayerListItem[], user: SessionUser | null): PlayerListItem[] {
   if (user?.role === "admin") return players;
   const buyable = players.filter(isBuyable);

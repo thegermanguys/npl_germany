@@ -12,11 +12,12 @@ import { PhotoCircle } from "@/components/PhotoCircle";
 import { PhotoControl } from "@/components/PhotoControl";
 import { PlayerStatsDetail } from "@/components/PlayerStats";
 import { ProfileForm } from "@/components/ProfileForm";
+import { canOpenIdentityDocuments } from "@/lib/access";
 import { formatEuro, auctionStatusLabel } from "@/lib/auction";
 import { DbNotConfiguredError, ballLabel, isDatabaseConfigured } from "@/lib/db";
 import { canViewPlayer } from "@/lib/eligibility";
 import { mediaPath } from "@/lib/media";
-import { getCurrentSeason, getPlayerDocuments, getProfileById, listFranchises } from "@/lib/queries";
+import { franchiseForUser, getCurrentSeason, getPlayerDocuments, getProfileById, listFranchises } from "@/lib/queries";
 import { canInspectPlayers, getSession, isAdmin } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -74,7 +75,17 @@ export default async function PlayerProfilePage({
 
   const inspect = canInspectPlayers(user) || user?.userId === player.user_id;
   const admin = isAdmin(user);
-  const documents = admin ? await getPlayerDocuments(player.id) : null;
+  const club = user?.role === "franchise_owner" ? await franchiseForUser(user.userId) : null;
+  const playerClub = player.sold_to_franchise_id ?? player.franchise_id;
+  const ownerMaySeeDocs = Boolean(
+    user &&
+      user.role === "franchise_owner" &&
+      canOpenIdentityDocuments(user.role) &&
+      club &&
+      playerClub &&
+      club.id === playerClub,
+  );
+  const documents = admin || ownerMaySeeDocs ? await getPlayerDocuments(player.id) : null;
 
   return (
     <>

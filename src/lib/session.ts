@@ -30,7 +30,7 @@ export async function clearSession(): Promise<void> {
 }
 
 export function canInspectPlayers(user: SessionUser | null): boolean {
-  return user?.role === "franchise_owner" || user?.role === "admin";
+  return user?.role === "franchise_owner" || user?.role === "franchise_staff" || user?.role === "admin";
 }
 
 export function isAdmin(user: SessionUser | null): boolean {
@@ -39,4 +39,8 @@ export function isAdmin(user: SessionUser | null): boolean {
 
 export function isFranchiseOwner(user: SessionUser | null): boolean {
   return user?.role === "franchise_owner";
+}
+
+export function isFranchiseStaff(user: SessionUser | null): boolean {
+  return user?.role === "franchise_staff";
 }

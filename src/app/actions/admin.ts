@@ -20,6 +20,7 @@ import {
   updateSeason,
   updateUserPassword,
 } from "@/lib/queries";
+import { canChangeAccount } from "@/lib/access";
 import { getSession, isAdmin } from "@/lib/session";
 import {
   checkboxOn,
@@ -246,8 +247,8 @@ export async function adminSetPassword(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const denied = await requireAdmin();
-  if (denied) return denied;
+  const session = await getSession();
+  if (!isAdmin(session)) return { error: "Admin only." };
 
   const userId = String(formData.get("userId") ?? "");
   const parsed = validateNewPassword(
@@ -260,6 +261,7 @@ export async function adminSetPassword(
   try {
     const user = await getUserById(userId);
     if (!user) return { error: "Account not found." };
+    if (!canChangeAccount(session, user)) return { error: "That account cannot be changed." };
     await updateUserPassword(user.id, bcrypt.hashSync(parsed.password, 10));
     await invalidateUserResetTokens(user.id);
   } catch (error) {

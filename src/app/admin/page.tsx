@@ -8,6 +8,7 @@ import { PhotoControl } from "@/components/PhotoControl";
 import { PlayerStatsStrip } from "@/components/PlayerStats";
 import { EligibilityBadge } from "@/components/EligibilityBadge";
 import { EligibilityReview } from "@/components/EligibilityReview";
+import { isLeagueSuperAdmin } from "@/lib/access";
 import { LEAGUE_ADMIN_EMAIL } from "@/lib/admin-account";
 import { leagueLogoUrl } from "@/lib/branding";
 import { ballLabel, isDatabaseConfigured } from "@/lib/db";
@@ -50,7 +51,7 @@ export default async function AdminPage() {
         <div className="wrap profile-hero">
           <PhotoCircle src={logoUrl} name="NPL Germany" size="lg" fit="contain" />
           <div>
-            <div className="eyebrow">LEAGUE ADMIN</div>
+            <div className="eyebrow">{isLeagueSuperAdmin(user) ? "LEAGUE SUPER ADMIN" : "LEAGUE ADMIN"}</div>
             <h1>Season 1</h1>
             <p className="lede">{user.email}</p>
           </div>
