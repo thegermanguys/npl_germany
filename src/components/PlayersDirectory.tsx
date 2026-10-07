@@ -27,7 +27,7 @@ export function PlayersDirectory({
 
   const cities = useMemo(() => ["All", ...franchiseCities], [franchiseCities]);
   const roles = useMemo(
-    () => ["All", ...Array.from(new Set(players.map((player) => player.playing_role)))],
+    () => ["All", ...Array.from(new Set(players.map((player) => player.playing_role))).sort()],
     [players],
   );
 
@@ -61,36 +61,49 @@ export function PlayersDirectory({
     );
   }
 
+  const filtered = query.trim() !== "" || city !== "All" || role !== "All";
+  const total = players.length;
+  const countLabel = filtered
+    ? `${list.length} of ${total}`
+    : `${total} ${total === 1 ? "player" : "players"}`;
+
   return (
     <div>
-      <div className="filter-row">
-        <input
-          className="filter-search"
-          type="search"
-          placeholder="Search name"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-        {cities.map((name) => (
-          <button
-            key={name}
-            type="button"
-            className={`filter-chip${city === name ? " active" : ""}`}
-            onClick={() => setCity(name)}
-          >
-            {name}
-          </button>
-        ))}
-        {roles.map((name) => (
-          <button
-            key={`role-${name}`}
-            type="button"
-            className={`filter-chip${role === name ? " active" : ""}`}
-            onClick={() => setRole(name)}
-          >
-            {name}
-          </button>
-        ))}
+      <div className="players-filters">
+        <div className="filter-row">
+          <input
+            className="filter-search"
+            type="search"
+            placeholder="Search name"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          {cities.map((name) => (
+            <button
+              key={name}
+              type="button"
+              className={`filter-chip${city === name ? " active" : ""}`}
+              onClick={() => setCity(name)}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+        <div className="filter-row">
+          {roles.map((name) => (
+            <button
+              key={`role-${name}`}
+              type="button"
+              className={`filter-chip${role === name ? " active" : ""}`}
+              onClick={() => setRole(name)}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+        <p className="players-count" aria-live="polite">
+          {countLabel}
+        </p>
       </div>
 
       {list.length === 0 ? (

@@ -285,6 +285,9 @@ section{position:relative;}
 }
 .filter-chip:hover{border-color:var(--crimson);}
 .filter-chip.active{background:var(--navy);color:var(--white);border-color:var(--navy);}
+.players-filters{margin-bottom:28px;}
+.players-filters .filter-row{margin-bottom:12px;}
+.players-count{margin:16px 0 0;font-size:13px;color:var(--muted);}
 .players-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
 .player-card{background:var(--white);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
 .player-card-photo{display:flex;justify-content:center;padding:22px 16px 0;}
